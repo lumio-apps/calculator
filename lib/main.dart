@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+
+import 'update_service.dart';
 
 void main() => runApp(const CalculatorApp());
 
@@ -311,6 +314,17 @@ class _CalculatorPageState extends State<CalculatorPage> {
     );
   }
 
+  Future<void> _showAbout() async {
+    final info = await PackageInfo.fromPlatform();
+    if (!mounted) return;
+    showAboutDialog(
+      context: context,
+      applicationName: 'Calculator',
+      applicationVersion: 'Version ${info.version}',
+      applicationLegalese: 'By Lumio Apps\nOpen source under the MIT License',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -326,13 +340,43 @@ class _CalculatorPageState extends State<CalculatorPage> {
       body: SafeArea(
         child: Column(
           children: [
-            Align(
-              alignment: Alignment.centerRight,
-              child: IconButton(
-                tooltip: 'History',
-                icon: const Icon(Icons.history),
-                onPressed: _showHistory,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                IconButton(
+                  tooltip: 'History',
+                  icon: const Icon(Icons.history),
+                  onPressed: _showHistory,
+                ),
+                PopupMenuButton<String>(
+                  tooltip: 'More',
+                  onSelected: (value) {
+                    if (value == 'update') {
+                      UpdateService.checkForUpdates(context);
+                    } else if (value == 'about') {
+                      _showAbout();
+                    }
+                  },
+                  itemBuilder: (context) => const [
+                    PopupMenuItem(
+                      value: 'update',
+                      child: ListTile(
+                        leading: Icon(Icons.system_update),
+                        title: Text('Check for updates'),
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'about',
+                      child: ListTile(
+                        leading: Icon(Icons.info_outline),
+                        title: Text('About'),
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
             Expanded(
               flex: 2,

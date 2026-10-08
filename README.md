@@ -10,7 +10,8 @@ By [Lumio Apps](https://github.com/lumio-apps).
 - Brackets, percent, backspace and clear
 - History: tap an old result to reuse it
 - Light and dark theme (follows your system)
-- No ads, no tracking, no internet permission
+- Check for updates inside the app (from GitHub Releases)
+- No ads, no tracking
 
 ## Download
 

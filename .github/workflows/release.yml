@@ -28,28 +28,29 @@ jobs:
       - run: flutter pub get
       - run: flutter analyze
 
-      # Recreate the signing key from repository secrets.
+      - name: Build release APK
+        run: flutter build apk --release
+
+      # Sign the APK with the Lumio release key from repository secrets.
       # Required secrets: KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD
-      - name: Prepare signing key
+      - name: Sign APK
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          echo "$KEYSTORE_BASE64" | base64 -d > android/app/upload-keystore.jks
-          cat > android/key.properties <<EOF
-          storePassword=$KEYSTORE_PASSWORD
-          keyPassword=$KEY_PASSWORD
-          keyAlias=$KEY_ALIAS
-          storeFile=upload-keystore.jks
-          EOF
-
-      - name: Build release APK
-        run: flutter build apk --release
-
-      - name: Rename APK
-        run: cp build/app/outputs/flutter-apk/app-release.apk "Calculator-${{ github.ref_name }}.apk"
+          echo "$KEYSTORE_BASE64" | base64 -d > release.jks
+          BUILD_TOOLS=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          "$BUILD_TOOLS/apksigner" sign \
+            --ks release.jks \
+            --ks-key-alias "$KEY_ALIAS" \
+            --ks-pass env:KEYSTORE_PASSWORD \
+            --key-pass env:KEY_PASSWORD \
+            --out "Calculator-${{ github.ref_name }}.apk" \
+            build/app/outputs/flutter-apk/app-release.apk
+          "$BUILD_TOOLS/apksigner" verify --print-certs "Calculator-${{ github.ref_name }}.apk"
+          rm release.jks
 
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
