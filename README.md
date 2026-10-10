@@ -7,7 +7,9 @@ By [Lumio Apps](https://github.com/lumio-apps).
 ## Features
 
 - Live result preview while you type
-- Brackets, percent, backspace and clear
+- Scientific mode: sin, cos, tan, ln, log, √, x², xʸ, π, e (button or rotate your phone)
+- Unit converter: length, weight, temperature, area and speed
+- Date calculator: days between two dates and age from date of birth
 - History: tap an old result to reuse it
 - Light and dark theme (follows your system)
 - Check for updates inside the app (from GitHub Releases)
