@@ -3,6 +3,9 @@ import 'package:flutter/services.dart';
 
 import 'app_menu.dart';
 import 'expression_parser.dart';
+import 'settings.dart';
+import 'share.dart';
+import 'widgets.dart';
 
 class CalculatorPage extends StatefulWidget {
   const CalculatorPage({super.key});
@@ -17,7 +20,6 @@ class _CalculatorPageState extends State<CalculatorPage> {
   bool _justEvaluated = false;
   bool _scientific = false;
   bool _degrees = true;
-  final List<String> _history = [];
 
   static const _ops = ['+', '−', '×', '÷', '^'];
   static const _funcTokens = ['sin(', 'cos(', 'tan(', 'ln(', 'log(', '√('];
@@ -32,8 +34,15 @@ class _CalculatorPageState extends State<CalculatorPage> {
 
   static const _sciKeys = ['DEG', 'sin', 'cos', 'tan', 'ln', 'log', '√', 'x²', 'xʸ', 'π', 'e', '1/x'];
 
+  AppSettings get _settings => SettingsScope.read(context);
+
   bool _isOp(String c) => _ops.contains(c);
   bool _isDigit(String c) => c.isNotEmpty && '0123456789'.contains(c);
+
+  void _haptic([bool strong = false]) {
+    if (!_settings.vibration) return;
+    strong ? HapticFeedback.mediumImpact() : HapticFeedback.selectionClick();
+  }
 
   /// True when the expression ends with a complete value (number, ")", "%", π or e).
   bool get _endsWithValue {
@@ -62,7 +71,8 @@ class _CalculatorPageState extends State<CalculatorPage> {
   String? _tryEval(String e) {
     if (e.isEmpty) return null;
     try {
-      return formatNumber(ExpressionParser(_close(e), degrees: _degrees).parse());
+      final v = ExpressionParser(_close(e), degrees: _degrees).parse();
+      return formatNumber(v, decimals: _settings.decimalPlaces);
     } catch (_) {
       return null;
     }
@@ -74,7 +84,7 @@ class _CalculatorPageState extends State<CalculatorPage> {
   }
 
   void _press(String key) {
-    HapticFeedback.selectionClick();
+    _haptic();
     setState(() {
       switch (key) {
         case 'AC':
@@ -227,58 +237,149 @@ class _CalculatorPageState extends State<CalculatorPage> {
     if (_expr.isEmpty) return;
     final t = _close(_expr);
     try {
-      final res = formatNumber(ExpressionParser(t, degrees: _degrees).parse());
-      _history.insert(0, '$t = $res');
-      if (_history.length > 50) _history.removeLast();
+      final res = formatNumber(
+        ExpressionParser(t, degrees: _degrees).parse(),
+        decimals: _settings.decimalPlaces,
+      );
+      if (t != res) _settings.addHistory('$t = $res');
       _expr = res;
       _preview = '';
       _justEvaluated = true;
-      HapticFeedback.lightImpact();
+      _haptic(true);
     } catch (_) {
       _preview = 'Error';
-      HapticFeedback.heavyImpact();
+      if (_settings.vibration) HapticFeedback.heavyImpact();
     }
   }
 
-  void _showHistory() {
-    showModalBottomSheet(
+  // --- Copy, paste and share ---------------------------------------------
+
+  /// The current answer as plain text other apps understand ("-1234.5").
+  String get _plainResult {
+    final value = (_preview.isNotEmpty && _preview != 'Error') ? _preview : (_expr.isEmpty ? '0' : _expr);
+    return value.replaceAll('−', '-');
+  }
+
+  void _copy() {
+    Clipboard.setData(ClipboardData(text: _plainResult));
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Copied')));
+  }
+
+  Future<void> _paste() async {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    if (!mounted) return;
+    final value = parseInput(data?.text ?? '', _settings.numberStyle);
+    if (value == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Clipboard has no number')));
+      return;
+    }
+    setState(() {
+      _startFresh();
+      var number = formatNumber(value, decimals: 10);
+      if (_endsWithValue) _expr += '×';
+      if (number.startsWith('−') && _expr.isNotEmpty) number = '($number)';
+      _expr += number;
+      _update();
+    });
+  }
+
+  void _share() {
+    final res = _plainResult;
+    final hasExpression = _preview.isNotEmpty && _preview != 'Error';
+    shareText(hasExpression ? '${_close(_expr)} = ${res.replaceAll('-', '−')}' : res.replaceAll('-', '−'));
+  }
+
+  void _showDisplayMenu() {
+    _haptic(true);
+    showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
       builder: (ctx) => SafeArea(
-        child: _history.isEmpty
-            ? const SizedBox(
-                height: 160,
-                child: Center(child: Text('No history yet')),
-              )
-            : ListView(
-                shrinkWrap: true,
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                children: [
-                  for (final h in _history)
-                    ListTile(
-                      title: Text(h, textAlign: TextAlign.right),
-                      onTap: () {
-                        setState(() {
-                          _expr = h.split(' = ').last;
-                          _justEvaluated = true;
-                          _preview = '';
-                        });
-                        Navigator.pop(ctx);
-                      },
-                    ),
-                  TextButton.icon(
-                    onPressed: () {
-                      setState(_history.clear);
-                      Navigator.pop(ctx);
-                    },
-                    icon: const Icon(Icons.delete_outline),
-                    label: const Text('Clear history'),
-                  ),
-                ],
-              ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.copy),
+              title: const Text('Copy result'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _copy();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.content_paste),
+              title: const Text('Paste number'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _paste();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.share_outlined),
+              title: const Text('Share'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _share();
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
       ),
     );
   }
+
+  void _showHistory() {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (ctx) {
+        final history = SettingsScope.of(ctx).history;
+        final style = SettingsScope.of(ctx).numberStyle;
+        return SafeArea(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: MediaQuery.of(ctx).size.height * 0.7),
+            child: history.isEmpty
+                ? const SizedBox(height: 160, child: Center(child: Text('No history yet')))
+                : ListView(
+                    shrinkWrap: true,
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    children: [
+                      for (final h in history)
+                        ListTile(
+                          title: Text(formatExpression(h, style), textAlign: TextAlign.right),
+                          onTap: () {
+                            setState(() {
+                              _expr = h.split(' = ').last;
+                              _justEvaluated = true;
+                              _preview = '';
+                            });
+                            Navigator.pop(ctx);
+                          },
+                          onLongPress: () {
+                            Clipboard.setData(ClipboardData(text: h.replaceAll('−', '-')));
+                            ScaffoldMessenger.of(context)
+                                .showSnackBar(const SnackBar(content: Text('Copied')));
+                          },
+                        ),
+                      TextButton.icon(
+                        onPressed: () {
+                          _settings.clearHistory();
+                          Navigator.pop(ctx);
+                        },
+                        icon: const Icon(Icons.delete_outline),
+                        label: const Text('Clear history'),
+                      ),
+                    ],
+                  ),
+          ),
+        );
+      },
+    );
+  }
+
+  // --- Layout ------------------------------------------------------------
 
   Widget _keyGrid(List<List<String>> rows, {bool small = false}) {
     return Column(
@@ -319,39 +420,57 @@ class _CalculatorPageState extends State<CalculatorPage> {
     return rows;
   }
 
-  Widget _display(ColorScheme cs, {required bool compact}) {
-    return Container(
-      alignment: Alignment.bottomRight,
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              _expr.isEmpty ? '0' : _expr,
-              maxLines: 1,
-              style: TextStyle(
-                fontSize: compact ? 36 : 56,
-                fontWeight: FontWeight.w300,
-                color: cs.onSurface,
+  Widget _display(ColorScheme cs, NumberStyle style, {required bool compact}) {
+    final shownExpr = _expr.isEmpty ? '0' : formatExpression(_expr, style);
+    final shownPreview = _preview.isEmpty
+        ? ' '
+        : (_preview == 'Error' ? _preview : '= ${formatExpression(_preview, style)}');
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onLongPress: _showDisplayMenu,
+      onHorizontalDragEnd: (details) {
+        // Swipe left or right on the display to delete the last character.
+        if ((details.primaryVelocity ?? 0).abs() > 200 && _expr.isNotEmpty) {
+          _haptic();
+          setState(() {
+            _backspace();
+            _update();
+          });
+        }
+      },
+      child: Container(
+        alignment: Alignment.bottomRight,
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.end,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                shownExpr,
+                maxLines: 1,
+                style: TextStyle(
+                  fontSize: compact ? 36 : 56,
+                  fontWeight: FontWeight.w300,
+                  color: cs.onSurface,
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 4),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              _preview.isEmpty ? ' ' : (_preview == 'Error' ? _preview : '= $_preview'),
-              maxLines: 1,
-              style: TextStyle(
-                fontSize: compact ? 20 : 28,
-                color: _preview == 'Error' ? cs.error : cs.onSurfaceVariant,
+            const SizedBox(height: 4),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                shownPreview,
+                maxLines: 1,
+                style: TextStyle(
+                  fontSize: compact ? 20 : 28,
+                  color: _preview == 'Error' ? cs.error : cs.onSurfaceVariant,
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -359,6 +478,7 @@ class _CalculatorPageState extends State<CalculatorPage> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final style = SettingsScope.of(context).numberStyle;
     final landscape = MediaQuery.of(context).orientation == Orientation.landscape;
 
     final header = ScreenHeader(
@@ -382,7 +502,7 @@ class _CalculatorPageState extends State<CalculatorPage> {
       return Column(
         children: [
           header,
-          Expanded(flex: 2, child: _display(cs, compact: true)),
+          Expanded(flex: 2, child: _display(cs, style, compact: true)),
           Expanded(
             flex: 5,
             child: Padding(
@@ -403,7 +523,7 @@ class _CalculatorPageState extends State<CalculatorPage> {
     return Column(
       children: [
         header,
-        Expanded(flex: 2, child: _display(cs, compact: false)),
+        Expanded(flex: 2, child: _display(cs, style, compact: false)),
         if (_scientific)
           SizedBox(
             height: 112,

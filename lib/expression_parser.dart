@@ -130,7 +130,7 @@ class ExpressionParser {
 }
 
 /// Formats a result for display, using × 10^n for very large or small values.
-String formatNumber(double v) {
+String formatNumber(double v, {int decimals = 10}) {
   if (v.isNaN || v.isInfinite) throw const FormatException('Math error');
   if (v.abs() < 1e-12) return '0';
   final a = v.abs();
@@ -146,8 +146,11 @@ String formatNumber(double v) {
   } else if (v == v.roundToDouble()) {
     s = v.toInt().toString();
   } else {
-    s = v.toStringAsFixed(10);
-    s = s.replaceFirst(RegExp(r'0+$'), '').replaceFirst(RegExp(r'\.$'), '');
+    s = v.toStringAsFixed(decimals);
+    if (s.contains('.')) {
+      s = s.replaceFirst(RegExp(r'0+$'), '').replaceFirst(RegExp(r'\.$'), '');
+    }
+    if (s == '-0') s = '0';
   }
   return s.replaceAll('-', '−');
 }

@@ -1,35 +1,48 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+import 'settings_page.dart';
 import 'update_service.dart';
 
-/// The ⋮ menu shared by every screen: Check for updates and About.
+/// Shows the About dialog with the installed version.
+Future<void> showAppAbout(BuildContext context) async {
+  final info = await PackageInfo.fromPlatform();
+  if (!context.mounted) return;
+  showAboutDialog(
+    context: context,
+    applicationName: 'Calculator',
+    applicationVersion: 'Version ${info.version}',
+    applicationLegalese: 'By Lumio Apps\nOpen source under the MIT License\ngithub.com/lumio-apps/calculator',
+  );
+}
+
+/// The ⋮ menu shared by every screen.
 class AppMenuButton extends StatelessWidget {
   const AppMenuButton({super.key});
-
-  Future<void> _showAbout(BuildContext context) async {
-    final info = await PackageInfo.fromPlatform();
-    if (!context.mounted) return;
-    showAboutDialog(
-      context: context,
-      applicationName: 'Calculator',
-      applicationVersion: 'Version ${info.version}',
-      applicationLegalese: 'By Lumio Apps\nOpen source under the MIT License',
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
     return PopupMenuButton<String>(
       tooltip: 'More',
       onSelected: (value) {
-        if (value == 'update') {
-          UpdateService.checkForUpdates(context);
-        } else if (value == 'about') {
-          _showAbout(context);
+        switch (value) {
+          case 'settings':
+            Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const SettingsPage()));
+          case 'update':
+            UpdateService.checkForUpdates(context);
+          case 'about':
+            showAppAbout(context);
         }
       },
       itemBuilder: (context) => const [
+        PopupMenuItem(
+          value: 'settings',
+          child: ListTile(
+            leading: Icon(Icons.settings_outlined),
+            title: Text('Settings'),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
         PopupMenuItem(
           value: 'update',
           child: ListTile(
