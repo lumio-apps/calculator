@@ -62,9 +62,12 @@ Length · Weight · Temperature · Area · Volume · Speed · Time · Data · Fu
 ## Privacy
 
 Calculator works completely offline. It has no ads, no analytics and no accounts, and it never collects or sends your data.
-The only network request happens when **you** tap *Check for updates*, which asks GitHub whether a newer version exists.
+The Google Play and F-Droid versions have no internet permission at all. The GitHub APK makes one request only when **you** tap *Check for updates*.
+Read the full [privacy policy](PRIVACY.md).
 
 ## Download
+
+<!-- Add the store badges here once the app is live on F-Droid and Google Play. -->
 
 1. Open the [latest release](https://github.com/lumio-apps/calculator/releases/latest).
 2. Download `Calculator-vX.Y.Z.apk` and open it on your phone.

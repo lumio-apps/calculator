@@ -43,14 +43,15 @@ class AppMenuButton extends StatelessWidget {
             contentPadding: EdgeInsets.zero,
           ),
         ),
-        PopupMenuItem(
-          value: 'update',
-          child: ListTile(
-            leading: Icon(Icons.system_update),
-            title: Text('Check for updates'),
-            contentPadding: EdgeInsets.zero,
+        if (kSelfUpdate)
+          PopupMenuItem(
+            value: 'update',
+            child: ListTile(
+              leading: Icon(Icons.system_update),
+              title: Text('Check for updates'),
+              contentPadding: EdgeInsets.zero,
+            ),
           ),
-        ),
         PopupMenuItem(
           value: 'about',
           child: ListTile(

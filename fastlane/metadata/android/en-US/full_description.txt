@@ -1,0 +1,35 @@
+Calculator is a clean, fast and fully offline calculator with a scientific mode, a unit converter, everyday tools and a date calculator in one small app. No ads, no tracking, no accounts. Free and open source.
+
+CALCULATOR
+• Live result preview while you type
+• Scientific mode: sin, cos, tan, ln, log, √, x², xʸ, 1/x, π and e, in degrees or radians
+• Rotate your phone to open scientific mode automatically
+• History saved on your device; tap an entry to reuse it
+• Long-press the display to copy, paste or share a result
+• Swipe the display to delete the last digit
+
+UNIT CONVERTER
+11 categories with live results for every unit at once: length, weight, temperature, area, volume, speed, time, data, fuel economy, pressure and energy.
+
+TOOLS
+• Discount & Tax: sale price, savings and VAT / GST / sales tax
+• Tip & Split: tip amount and how much each person pays
+• Percentage: X% of Y, X as a percent of Y, and percent change
+• Loan / EMI: monthly payment, total interest and total paid
+• BMI: metric or imperial, with the healthy range for your height
+
+DATE CALCULATOR
+• Days between two dates, in years, months, weeks and days
+• Exact age from a date of birth and days until your next birthday
+
+MAKE IT YOURS
+• Light, dark or system theme with 6 accent colors
+• Number formats for every region: 1,234.56 · 1.234,56 · 1 234,56 · 12,34,567.89
+• Choose the number of decimal places
+• Turn key vibration on or off
+
+PRIVACY
+Calculator has no internet permission. It does not collect, store or share any personal data. Your history and settings stay on your device.
+
+Open source under the MIT License:
+https://github.com/lumio-apps/calculator

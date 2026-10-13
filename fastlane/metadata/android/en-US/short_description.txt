@@ -1,0 +1,1 @@
+Offline calculator with scientific mode, unit converter and everyday tools.

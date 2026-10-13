@@ -134,11 +134,12 @@ class SettingsPage extends StatelessWidget {
               },
             ),
             _sectionTitle(context, 'About'),
-            ListTile(
-              leading: const Icon(Icons.system_update),
-              title: const Text('Check for updates'),
-              onTap: () => UpdateService.checkForUpdates(context),
-            ),
+            if (kSelfUpdate)
+              ListTile(
+                leading: const Icon(Icons.system_update),
+                title: const Text('Check for updates'),
+                onTap: () => UpdateService.checkForUpdates(context),
+              ),
             ListTile(
               leading: const Icon(Icons.info_outline),
               title: const Text('About Calculator'),

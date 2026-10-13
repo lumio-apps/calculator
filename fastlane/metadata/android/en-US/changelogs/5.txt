@@ -1,0 +1,5 @@
+• New Tools tab: Discount & Tax, Tip & Split, Percentage, Loan / EMI and BMI
+• Unit converter now has 11 categories, including volume, time, data, fuel, pressure and energy
+• Calculation history is saved on your device
+• Copy, paste and share results; swipe the display to delete
+• Settings: theme, accent color, number format, decimal places and vibration

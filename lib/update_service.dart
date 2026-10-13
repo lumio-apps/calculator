@@ -7,6 +7,10 @@ import 'package:open_filex/open_filex.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 
+/// False for F-Droid and Google Play builds, which update through their store.
+/// Build with `--dart-define=SELF_UPDATE=false` to turn the in-app updater off.
+const bool kSelfUpdate = bool.fromEnvironment('SELF_UPDATE', defaultValue: true);
+
 /// Checks GitHub Releases for a newer APK and installs it inside the app.
 class UpdateService {
   static const _latestReleaseUrl =
