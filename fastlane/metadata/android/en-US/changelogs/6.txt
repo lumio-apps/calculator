@@ -1,0 +1,3 @@
+• Fixed decimal numbers such as 1.5 being read incorrectly when a comma number format is selected
+• The decimal key now shows the decimal mark of your chosen number format
+• Release signing key updated

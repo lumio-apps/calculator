@@ -1,6 +1,6 @@
 name: Release
 
-# Runs when you push a tag like v1.3.1
+# Runs when you push a tag like v1.3.2
 on:
   push:
     tags:
@@ -79,6 +79,14 @@ jobs:
             "$AAB" "$KEY_ALIAS"
           jarsigner -verify "Calculator-${{ github.ref_name }}-play.aab"
           rm "$RUNNER_TEMP/release.jks"
+
+      # Print what the stores will see, so permissions and target SDK can be checked.
+      - name: Check permissions and target SDK
+        run: |
+          echo "== GitHub APK =="
+          "$BUILD_TOOLS/aapt" dump badging "Calculator-${{ github.ref_name }}.apk" | grep -E "package:|sdkVersion|targetSdkVersion|uses-permission"
+          echo "== Play bundle manifest =="
+          unzip -p build/app/outputs/bundle/release/app-release.aab base/manifest/AndroidManifest.xml | strings | grep -iE "permission|INTERNET|INSTALL" || echo "No extra permissions found"
 
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2

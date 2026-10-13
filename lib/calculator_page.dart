@@ -391,7 +391,9 @@ class _CalculatorPageState extends State<CalculatorPage> {
                 for (final k in row)
                   Expanded(
                     child: _CalcButton(
-                      label: k == 'DEG' ? (_degrees ? 'DEG' : 'RAD') : k,
+                      label: k == 'DEG'
+                          ? (_degrees ? 'DEG' : 'RAD')
+                          : (k == '.' ? _settings.numberStyle.decimalSeparator : k),
                       kind: _kindOf(k),
                       small: small,
                       onTap: () => _press(k),

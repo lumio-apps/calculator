@@ -3,12 +3,21 @@ import 'package:flutter/services.dart';
 
 import 'settings.dart';
 
-/// Parses user input, accepting both "1,5" and "1.5" and ignoring grouping.
+/// Parses user input. Accepts "1,5" and "1.5" and ignores grouping characters.
 double? parseInput(String text, NumberStyle style) {
-  var t = text.trim().replaceAll(' ', '').replaceAll('−', '-');
+  var t = text.trim().replaceAll(RegExp(r'[\s\u00A0]'), '').replaceAll('−', '-');
   if (t.isEmpty) return null;
+  final hasComma = t.contains(',');
+  final dotCount = '.'.allMatches(t).length;
   if (style.decimalSeparator == ',') {
-    t = t.replaceAll('.', '').replaceAll(',', '.');
+    if (hasComma) {
+      // "1.234,56": the comma is the decimal mark, dots are grouping.
+      t = t.replaceAll('.', '').replaceAll(',', '.');
+    } else if (dotCount > 1) {
+      // "1.234.567": only grouping dots.
+      t = t.replaceAll('.', '');
+    }
+    // A single dot with no comma ("1.5") is a decimal point.
   } else {
     t = t.replaceAll(',', '');
   }
