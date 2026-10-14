@@ -56,47 +56,18 @@ jobs:
             build/app/outputs/flutter-apk/app-release.apk
           "$BUILD_TOOLS/apksigner" verify --print-certs "Calculator-${{ github.ref_name }}.apk"
 
-      # 2) Google Play bundle: no updater, no internet permission.
-      - name: Build Play Store bundle
-        run: |
-          sed -i -e '/REQUEST_INSTALL_PACKAGES/d' -e '/android.permission.INTERNET/d' android/app/src/main/AndroidManifest.xml
-          flutter build appbundle --release --dart-define=SELF_UPDATE=false
-          git checkout -- android/app/src/main/AndroidManifest.xml
-
-      - name: Sign Play Store bundle
-        env:
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: |
-          AAB=build/app/outputs/bundle/release/app-release.aab
-          # Remove the debug signature, then sign with the Lumio upload key.
-          zip -q -d "$AAB" 'META-INF/*.SF' 'META-INF/*.RSA' 'META-INF/*.EC' 'META-INF/*.DSA' 'META-INF/MANIFEST.MF' || true
-          jarsigner -keystore "$RUNNER_TEMP/release.jks" \
-            -storepass:env KEYSTORE_PASSWORD \
-            -keypass:env KEY_PASSWORD \
-            -signedjar "Calculator-${{ github.ref_name }}-play.aab" \
-            "$AAB" "$KEY_ALIAS"
-          jarsigner -verify "Calculator-${{ github.ref_name }}-play.aab"
-          rm "$RUNNER_TEMP/release.jks"
-
-      # Print what the stores will see, so permissions and target SDK can be checked.
+      # Print the permissions and target SDK of the built APK.
       - name: Check permissions and target SDK
         run: |
           echo "== GitHub APK =="
           "$BUILD_TOOLS/aapt" dump badging "Calculator-${{ github.ref_name }}.apk" | grep -E "package:|sdkVersion|targetSdkVersion|uses-permission"
-          echo "== Play bundle manifest =="
-          unzip -p build/app/outputs/bundle/release/app-release.aab base/manifest/AndroidManifest.xml | strings | grep -iE "permission|INTERNET|INSTALL" || echo "No extra permissions found"
+
+      - name: Remove signing key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/release.jks"
 
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
           files: Calculator-${{ github.ref_name }}.apk
           generate_release_notes: true
-
-      # The Play bundle is kept as a download on the workflow run, not in the public release.
-      - name: Upload Play Store bundle
-        uses: actions/upload-artifact@v4
-        with:
-          name: play-store-bundle
-          path: Calculator-${{ github.ref_name }}-play.aab

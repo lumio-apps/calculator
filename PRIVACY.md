@@ -21,7 +21,7 @@ Your calculation history and your settings (theme, accent color, number format, 
 
 ## Internet access
 
-The versions on Google Play and F-Droid have **no internet permission** and work completely offline.
+The version on F-Droid has **no internet permission** and work completely offline.
 
 The APK downloaded from GitHub Releases contains an optional **Check for updates** button. Only when you tap it, the app asks the public GitHub API whether a newer version exists and, if you agree, downloads it from GitHub. No personal data is sent. GitHub's own privacy statement applies to that request: https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement
 
