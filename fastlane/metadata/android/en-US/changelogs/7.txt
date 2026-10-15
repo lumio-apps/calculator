@@ -1,0 +1,3 @@
+• New glass design: frosted panels, glowing keys and a soft aurora background
+• New "Reduce transparency" setting for a solid look and faster drawing on older phones
+• New lime accent color

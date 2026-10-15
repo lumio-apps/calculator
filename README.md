@@ -54,10 +54,11 @@ Length · Weight · Temperature · Area · Volume · Speed · Time · Data · Fu
 - Exact age from a date of birth, the weekday you were born and days until your next birthday
 
 ### Make it yours
-- Light, dark or system theme with 6 accent colors
+- Light, dark or system theme with 7 accent colors
 - Number formats for every region: `1,234.56` · `1.234,56` · `1 234,56` · `12,34,567.89`
 - Choose how many decimal places to show
 - Turn key vibration on or off
+- Glass design with an aurora background, and a "Reduce transparency" switch for a solid look
 
 ## Privacy
 

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import 'app_menu.dart';
 import 'expression_parser.dart';
+import 'glass.dart';
 import 'settings.dart';
 import 'share.dart';
 import 'widgets.dart';
@@ -422,11 +423,13 @@ class _CalculatorPageState extends State<CalculatorPage> {
     return rows;
   }
 
-  Widget _display(ColorScheme cs, NumberStyle style, {required bool compact}) {
-    final shownExpr = _expr.isEmpty ? '0' : formatExpression(_expr, style);
-    final shownPreview = _preview.isEmpty
-        ? ' '
-        : (_preview == 'Error' ? _preview : '= ${formatExpression(_preview, style)}');
+  Widget _display(GlassStyle g, NumberStyle style, {required bool compact, required bool showAngle}) {
+    final hasPreview = _preview.isNotEmpty;
+    final isError = _preview == 'Error';
+    final expr = _expr.isEmpty ? '0' : formatExpression(_expr, style);
+    final top = hasPreview ? expr : ' ';
+    final main = hasPreview ? (isError ? 'Error' : formatExpression(_preview, style)) : expr;
+
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onLongPress: _showDisplayMenu,
@@ -440,35 +443,67 @@ class _CalculatorPageState extends State<CalculatorPage> {
           });
         }
       },
-      child: Container(
-        alignment: Alignment.bottomRight,
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.end,
-          crossAxisAlignment: CrossAxisAlignment.end,
+      child: GlassPanel(
+        radius: 32,
+        margin: EdgeInsets.fromLTRB(16, compact ? 0 : 8, 16, 12),
+        padding: EdgeInsets.symmetric(horizontal: 22, vertical: compact ? 8 : 18),
+        child: Stack(
           children: [
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                shownExpr,
-                maxLines: 1,
-                style: TextStyle(
-                  fontSize: compact ? 36 : 56,
-                  fontWeight: FontWeight.w300,
-                  color: cs.onSurface,
+            if (showAngle)
+              Align(
+                alignment: Alignment.topLeft,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: () => _press('DEG'),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      color: g.accent.withAlpha(g.dark ? 36 : 60),
+                      border: Border.all(color: g.op.withAlpha(110)),
+                    ),
+                    child: Text(
+                      _degrees ? 'DEG' : 'RAD',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: g.op),
+                    ),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 4),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                shownPreview,
-                maxLines: 1,
-                style: TextStyle(
-                  fontSize: compact ? 20 : 28,
-                  color: _preview == 'Error' ? cs.error : cs.onSurfaceVariant,
-                ),
+            Align(
+              alignment: Alignment.bottomRight,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      top,
+                      maxLines: 1,
+                      style: TextStyle(
+                        fontSize: compact ? 18 : 26,
+                        fontWeight: FontWeight.w300,
+                        color: g.textDim,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      main,
+                      maxLines: 1,
+                      style: TextStyle(
+                        fontSize: compact ? 34 : 56,
+                        fontWeight: FontWeight.w300,
+                        letterSpacing: -1,
+                        color: isError ? Theme.of(context).colorScheme.error : g.text,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -479,7 +514,7 @@ class _CalculatorPageState extends State<CalculatorPage> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final g = GlassStyle.of(context);
     final style = SettingsScope.of(context).numberStyle;
     final landscape = MediaQuery.of(context).orientation == Orientation.landscape;
 
@@ -504,7 +539,7 @@ class _CalculatorPageState extends State<CalculatorPage> {
       return Column(
         children: [
           header,
-          Expanded(flex: 2, child: _display(cs, style, compact: true)),
+          Expanded(flex: 2, child: _display(g, style, compact: true, showAngle: true)),
           Expanded(
             flex: 5,
             child: Padding(
@@ -525,7 +560,7 @@ class _CalculatorPageState extends State<CalculatorPage> {
     return Column(
       children: [
         header,
-        Expanded(flex: 2, child: _display(cs, style, compact: false)),
+        Expanded(flex: 2, child: _display(g, style, compact: false, showAngle: _scientific)),
         if (_scientific)
           SizedBox(
             height: 112,
@@ -563,56 +598,65 @@ class _CalcButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final g = GlassStyle.of(context);
 
-    Color bg = cs.surfaceContainerHigh;
-    Color fg = cs.onSurface;
+    var fg = g.text;
+    List<Color>? gradient;
+    Color? glow;
+    Color? tint;
     switch (kind) {
       case _KeyKind.equals:
-        bg = cs.primary;
-        fg = cs.onPrimary;
+        gradient = g.equalsGradient;
+        fg = g.onEquals;
+        glow = g.equalsGradient[1];
         break;
       case _KeyKind.op:
-        bg = cs.primaryContainer;
-        fg = cs.onPrimaryContainer;
+        fg = g.op;
         break;
       case _KeyKind.action:
-        bg = cs.secondaryContainer;
-        fg = cs.onSecondaryContainer;
+        fg = label == 'AC' ? g.danger : (label == '%' ? g.op : g.text);
         break;
       case _KeyKind.scientific:
-        bg = cs.tertiaryContainer;
-        fg = cs.onTertiaryContainer;
+        fg = g.op;
+        tint = g.accent;
         break;
       case _KeyKind.digit:
         break;
     }
 
     final big = kind == _KeyKind.op || kind == _KeyKind.equals;
-    final fontSize = small ? (kind == _KeyKind.scientific ? 17.0 : 22.0) : (big ? 32.0 : 28.0);
-    final radius = small ? 18.0 : 28.0;
+    final fontSize = small ? (kind == _KeyKind.scientific ? 16.0 : 22.0) : (big ? 30.0 : 27.0);
+
+    final content = label == '⌫'
+        ? Icon(Icons.backspace_outlined, color: fg, size: small ? 20 : 24)
+        : FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: fontSize,
+                  fontWeight: kind == _KeyKind.equals ? FontWeight.w600 : FontWeight.w400,
+                  color: fg,
+                ),
+              ),
+            ),
+          );
+
+    final button = GlassKey(
+      onTap: onTap,
+      gradient: gradient,
+      glow: glow,
+      tint: tint,
+      semanticsLabel: label == '⌫' ? 'Backspace' : null,
+      child: content,
+    );
 
     return Padding(
       padding: EdgeInsets.all(small ? 3 : 5),
-      child: Material(
-        color: bg,
-        borderRadius: BorderRadius.circular(radius),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(radius),
-          onTap: onTap,
-          child: Center(
-            child: label == '⌫'
-                ? Icon(Icons.backspace_outlined, color: fg, size: small ? 20 : 24)
-                : FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      label,
-                      style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.w400, color: fg),
-                    ),
-                  ),
-          ),
-        ),
-      ),
+      // Big keys stay perfectly round; small (scientific / landscape) keys stretch into pills.
+      child: small ? button : Center(child: AspectRatio(aspectRatio: 1, child: button)),
     );
   }
 }

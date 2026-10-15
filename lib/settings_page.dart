@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'app_menu.dart';
+import 'glass.dart';
 import 'settings.dart';
 import 'update_service.dart';
 
@@ -22,8 +23,14 @@ class SettingsPage extends StatelessWidget {
     final s = SettingsScope.of(context);
     final cs = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+    return GlassBackdrop(
+      child: Scaffold(
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        title: const Text('Settings'),
+        backgroundColor: Colors.transparent,
+        scrolledUnderElevation: 0,
+      ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.only(bottom: 32),
@@ -68,12 +75,23 @@ class SettingsPage extends StatelessWidget {
                               width: 3,
                             ),
                           ),
-                          child: i == s.accentIndex ? const Icon(Icons.check, color: Colors.white) : null,
+                          child: i == s.accentIndex
+                              ? Icon(
+                                  Icons.check,
+                                  color: accentColors[i].computeLuminance() > 0.4 ? Colors.black : Colors.white,
+                                )
+                              : null,
                         ),
                       ),
                     ),
                 ],
               ),
+            ),
+            SwitchListTile(
+              title: const Text('Reduce transparency'),
+              subtitle: const Text('Solid panels, no blur. Can feel smoother on older phones'),
+              value: s.reduceTransparency,
+              onChanged: (v) => s.reduceTransparency = v,
             ),
             _sectionTitle(context, 'Numbers'),
             ListTile(
@@ -149,6 +167,7 @@ class SettingsPage extends StatelessWidget {
           ],
         ),
       ),
+    ),
     );
   }
 }

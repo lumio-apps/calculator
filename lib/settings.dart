@@ -28,6 +28,7 @@ enum NumberStyle {
 
 /// Accent colors the user can choose from.
 const accentColors = <Color>[
+  Color(0xFFD4FF4F),
   Color(0xFF6C63FF),
   Color(0xFF2F80ED),
   Color(0xFF14B8A6),
@@ -42,6 +43,7 @@ class AppSettings extends ChangeNotifier {
     _themeMode = ThemeMode.values[(_prefs.getInt('themeMode') ?? 0).clamp(0, ThemeMode.values.length - 1)];
     _accentIndex = (_prefs.getInt('accent') ?? 0).clamp(0, accentColors.length - 1);
     _vibration = _prefs.getBool('vibration') ?? true;
+    _reduceTransparency = _prefs.getBool('reduceTransparency') ?? false;
     _decimalPlaces = (_prefs.getInt('decimals') ?? 10).clamp(0, 10);
     _numberStyle = NumberStyle.values[(_prefs.getInt('numberStyle') ?? 1).clamp(0, NumberStyle.values.length - 1)];
     _history = _prefs.getStringList('history') ?? <String>[];
@@ -54,6 +56,7 @@ class AppSettings extends ChangeNotifier {
   late ThemeMode _themeMode;
   late int _accentIndex;
   late bool _vibration;
+  late bool _reduceTransparency;
   late int _decimalPlaces;
   late NumberStyle _numberStyle;
   late List<String> _history;
@@ -62,6 +65,7 @@ class AppSettings extends ChangeNotifier {
   int get accentIndex => _accentIndex;
   Color get accent => accentColors[_accentIndex];
   bool get vibration => _vibration;
+  bool get reduceTransparency => _reduceTransparency;
   int get decimalPlaces => _decimalPlaces;
   NumberStyle get numberStyle => _numberStyle;
   List<String> get history => List.unmodifiable(_history);
@@ -81,6 +85,12 @@ class AppSettings extends ChangeNotifier {
   set vibration(bool v) {
     _vibration = v;
     _prefs.setBool('vibration', v);
+    notifyListeners();
+  }
+
+  set reduceTransparency(bool v) {
+    _reduceTransparency = v;
+    _prefs.setBool('reduceTransparency', v);
     notifyListeners();
   }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'glass.dart';
 import 'settings.dart';
 
 /// Parses user input. Accepts "1,5" and "1.5" and ignores grouping characters.
@@ -45,6 +46,7 @@ class NumberField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassStyle.of(context);
     return TextField(
       controller: controller,
       keyboardType: TextInputType.numberWithOptions(decimal: true, signed: signed),
@@ -54,7 +56,9 @@ class NumberField extends StatelessWidget {
         labelText: label,
         suffixText: suffix,
         prefixText: prefix,
-        border: const OutlineInputBorder(),
+        filled: true,
+        fillColor: g.dark ? const Color(0x14FFFFFF) : const Color(0x80FFFFFF),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(18)),
       ),
       onChanged: onChanged,
     );
@@ -81,11 +85,12 @@ class ResultCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
-    return Card(
-      elevation: 0,
-      color: cs.primaryContainer,
+    return GlassPanel(
+      radius: 24,
+      margin: const EdgeInsets.all(4),
+      tint: GlassStyle.of(context).accent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(24),
         onLongPress: () {
           Clipboard.setData(ClipboardData(text: rows.map((r) => '${r.label}: ${r.value}').join('\n')));
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Copied')));
@@ -144,12 +149,19 @@ class ToolScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
-          children: children,
+    return GlassBackdrop(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: Text(title),
+          backgroundColor: Colors.transparent,
+          scrolledUnderElevation: 0,
+        ),
+        body: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+            children: children,
+          ),
         ),
       ),
     );

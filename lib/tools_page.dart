@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import 'app_menu.dart';
+import 'glass.dart';
 import 'settings.dart';
 import 'widgets.dart';
 
@@ -29,7 +30,7 @@ class ToolsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final g = GlassStyle.of(context);
     return Column(
       children: [
         const ScreenHeader(title: 'Tools'),
@@ -38,15 +39,15 @@ class ToolsPage extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
             children: [
               for (final t in _tools)
-                Card(
-                  elevation: 0,
-                  color: cs.surfaceContainerHigh,
+                GlassPanel(
+                  radius: 24,
                   margin: const EdgeInsets.symmetric(vertical: 6),
                   child: ListTile(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                     leading: CircleAvatar(
-                      backgroundColor: cs.primaryContainer,
-                      foregroundColor: cs.onPrimaryContainer,
+                      backgroundColor: g.accent.withAlpha(g.dark ? 46 : 90),
+                      foregroundColor: g.op,
                       child: Icon(t.icon),
                     ),
                     title: Text(t.title),
@@ -240,9 +241,8 @@ class _PercentagePageState extends State<PercentagePage> {
   Widget _section(String title, Widget a, Widget b, String result) {
     final cs = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
-    return Card(
-      elevation: 0,
-      color: cs.surfaceContainerHigh,
+    return GlassPanel(
+      radius: 24,
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
         padding: const EdgeInsets.all(16),

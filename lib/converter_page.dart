@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'app_menu.dart';
+import 'glass.dart';
 import 'settings.dart';
 import 'widgets.dart';
 
@@ -286,11 +287,11 @@ class _ConverterPageState extends State<ConverterPage> {
                 ],
               ),
               const SizedBox(height: 24),
-              Card(
-                elevation: 0,
-                color: cs.primaryContainer,
+              GlassPanel(
+                radius: 24,
+                tint: cs.primary,
                 child: InkWell(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(24),
                   onLongPress: result == null
                       ? null
                       : () {
