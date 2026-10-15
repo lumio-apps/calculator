@@ -1,0 +1,2 @@
+• Release and build improvements for the Google Play version
+• No changes to how the calculator works

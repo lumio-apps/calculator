@@ -1,6 +1,6 @@
 name: Release
 
-# Runs when you push a tag like v1.3.2
+# Runs when you push a tag like v1.4.0
 on:
   push:
     tags:
@@ -55,6 +55,36 @@ jobs:
             --out "Calculator-${{ github.ref_name }}.apk" \
             build/app/outputs/flutter-apk/app-release.apk
           "$BUILD_TOOLS/apksigner" verify --print-certs "Calculator-${{ github.ref_name }}.apk"
+
+      # 2) Google Play bundle: no in-app updater, no INTERNET and no REQUEST_INSTALL_PACKAGES.
+      #    Play handles updates itself. The manifest edit only exists on the CI runner.
+      - name: Build Google Play bundle
+        run: |
+          sed -i -e '/REQUEST_INSTALL_PACKAGES/d' -e '/android.permission.INTERNET/d' \
+            android/app/src/main/AndroidManifest.xml
+          flutter build appbundle --release --dart-define=SELF_UPDATE=false
+
+      # Sign with the same Lumio key. In Play Console this is the "upload key";
+      # Google re-signs the app for users with its own app signing key.
+      - name: Sign Google Play bundle
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          cp build/app/outputs/bundle/release/app-release.aab "Calculator-${{ github.ref_name }}.aab"
+          jarsigner -sigalg SHA256withRSA -digestalg SHA-256 \
+            -keystore "$RUNNER_TEMP/release.jks" \
+            -storepass:env KEYSTORE_PASSWORD -keypass:env KEY_PASSWORD \
+            "Calculator-${{ github.ref_name }}.aab" "$KEY_ALIAS"
+          jarsigner -verify "Calculator-${{ github.ref_name }}.aab"
+
+      - name: Keep Google Play bundle (private build artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: Calculator-play-bundle
+          path: Calculator-${{ github.ref_name }}.aab
+          retention-days: 30
 
       # Print the permissions and target SDK of the built APK.
       - name: Check permissions and target SDK
