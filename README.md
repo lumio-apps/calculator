@@ -18,14 +18,14 @@ No ads. No tracking. Free and open source.
 ## Screenshots
 
 <p align="center">
-  <img src="screenshots/calculator-dark.jpg" alt="Calculator in dark theme" width="200">
-  <img src="screenshots/calculator-light.jpg" alt="Calculator in light theme" width="200">
+  <img src="screenshots/calculator.jpg" alt="Calculator with the glass design" width="200">
   <img src="screenshots/converter.jpg" alt="Unit converter" width="200">
+  <img src="screenshots/tools.jpg" alt="Everyday tools" width="200">
 </p>
 <p align="center">
-  <img src="screenshots/temperature.jpg" alt="Temperature conversion" width="200">
-  <img src="screenshots/age.jpg" alt="Age calculator" width="200">
-  <img src="screenshots/days-between.jpg" alt="Days between two dates" width="200">
+  <img src="screenshots/date.jpg" alt="Date calculator" width="200">
+  <img src="screenshots/settings-light.jpg" alt="Settings in light theme" width="200">
+  <img src="screenshots/settings-dark.jpg" alt="Settings in dark theme" width="200">
 </p>
 
 ## Features
