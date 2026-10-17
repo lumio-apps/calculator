@@ -1,0 +1,2 @@
+• Release process cleanup: only the APK is published now
+• No changes to how the calculator works

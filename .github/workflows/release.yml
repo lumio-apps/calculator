@@ -1,6 +1,6 @@
 name: Release
 
-# Runs when you push a tag like v1.4.0
+# Runs when you push a tag like v1.4.2
 on:
   push:
     tags:
@@ -37,7 +37,7 @@ jobs:
           echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
           echo "BUILD_TOOLS=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)" >> "$GITHUB_ENV"
 
-      # 1) GitHub APK: includes the in-app "Check for updates".
+      # GitHub APK: includes the in-app "Check for updates".
       - name: Build GitHub APK
         run: flutter build apk --release
 
@@ -56,32 +56,6 @@ jobs:
             build/app/outputs/flutter-apk/app-release.apk
           "$BUILD_TOOLS/apksigner" verify --print-certs "Calculator-${{ github.ref_name }}.apk"
 
-      # 2) Google Play bundle: no in-app updater, no INTERNET and no REQUEST_INSTALL_PACKAGES.
-      #    Play handles updates itself. The manifest edit only exists on the CI runner.
-      - name: Build Google Play bundle
-        run: |
-          sed -i -e '/REQUEST_INSTALL_PACKAGES/d' -e '/android.permission.INTERNET/d' \
-            android/app/src/main/AndroidManifest.xml
-          flutter build appbundle --release --dart-define=SELF_UPDATE=false
-
-      # Sign with the same Lumio key. In Play Console this is the "upload key";
-      # Google re-signs the app for users with its own app signing key.
-      - name: Sign Google Play bundle
-        env:
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: |
-          cp build/app/outputs/bundle/release/app-release.aab "Calculator-${{ github.ref_name }}.aab"
-          # Gradle may have signed the bundle with the debug key. Remove that signature
-          # so only the Lumio key signs it (Play rejects debug-signed bundles).
-          zip -q -d "Calculator-${{ github.ref_name }}.aab" 'META-INF/*' || true
-          jarsigner -sigalg SHA256withRSA -digestalg SHA-256 \
-            -keystore "$RUNNER_TEMP/release.jks" \
-            -storepass:env KEYSTORE_PASSWORD -keypass:env KEY_PASSWORD \
-            "Calculator-${{ github.ref_name }}.aab" "$KEY_ALIAS"
-          jarsigner -verify -verbose -certs "Calculator-${{ github.ref_name }}.aab" | grep -E "jar verified|CN=|Owner" | sort -u
-
       # Print the permissions and target SDK of the built APK.
       - name: Check permissions and target SDK
         run: |
@@ -95,7 +69,5 @@ jobs:
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            Calculator-${{ github.ref_name }}.apk
-            Calculator-${{ github.ref_name }}.aab
+          files: Calculator-${{ github.ref_name }}.apk
           generate_release_notes: true
