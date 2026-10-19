@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'app_menu.dart';
-import 'glass.dart';
+import 'neo.dart';
 import 'settings.dart';
 import 'widgets.dart';
 
@@ -287,7 +287,7 @@ class _ConverterPageState extends State<ConverterPage> {
                 ],
               ),
               const SizedBox(height: 24),
-              GlassPanel(
+              NeoPanel(
                 radius: 24,
                 tint: cs.primary,
                 child: InkWell(

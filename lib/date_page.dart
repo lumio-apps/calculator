@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'app_menu.dart';
-import 'glass.dart';
+import 'neo.dart';
 
 enum _DateMode { difference, age }
 
@@ -90,7 +90,7 @@ class _DatePageState extends State<DatePage> {
   Widget _resultCard(String title, String main, List<String> lines) {
     final cs = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
-    return GlassPanel(
+    return NeoPanel(
       radius: 24,
       margin: const EdgeInsets.all(4),
       tint: cs.primary,

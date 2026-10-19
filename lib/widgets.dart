@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'glass.dart';
+import 'neo.dart';
 import 'settings.dart';
 
 /// Parses user input. Accepts "1,5" and "1.5" and ignores grouping characters.
@@ -46,7 +46,7 @@ class NumberField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final g = GlassStyle.of(context);
+    final g = NeoStyle.of(context);
     return TextField(
       controller: controller,
       keyboardType: TextInputType.numberWithOptions(decimal: true, signed: signed),
@@ -57,8 +57,11 @@ class NumberField extends StatelessWidget {
         suffixText: suffix,
         prefixText: prefix,
         filled: true,
-        fillColor: g.dark ? const Color(0x14FFFFFF) : const Color(0x80FFFFFF),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(18)),
+        fillColor: g.dark ? const Color(0xFF1C1F27) : const Color(0xFFDCE2EC),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: BorderSide.none,
+        ),
       ),
       onChanged: onChanged,
     );
@@ -85,10 +88,10 @@ class ResultCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
-    return GlassPanel(
+    return NeoPanel(
       radius: 24,
       margin: const EdgeInsets.all(4),
-      tint: GlassStyle.of(context).accent,
+      tint: NeoStyle.of(context).accent,
       child: InkWell(
         borderRadius: BorderRadius.circular(24),
         onLongPress: () {
@@ -149,7 +152,7 @@ class ToolScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GlassBackdrop(
+    return NeoBackdrop(
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(

@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 
 import 'app_menu.dart';
 import 'expression_parser.dart';
-import 'glass.dart';
+import 'neo.dart';
 import 'settings.dart';
 import 'share.dart';
 import 'widgets.dart';
@@ -423,7 +423,7 @@ class _CalculatorPageState extends State<CalculatorPage> {
     return rows;
   }
 
-  Widget _display(GlassStyle g, NumberStyle style, {required bool compact, required bool showAngle}) {
+  Widget _display(NeoStyle g, NumberStyle style, {required bool compact, required bool showAngle}) {
     final hasPreview = _preview.isNotEmpty;
     final isError = _preview == 'Error';
     final expr = _expr.isEmpty ? '0' : formatExpression(_expr, style);
@@ -443,7 +443,8 @@ class _CalculatorPageState extends State<CalculatorPage> {
           });
         }
       },
-      child: GlassPanel(
+      child: NeoPanel(
+        inset: true,
         radius: 32,
         margin: EdgeInsets.fromLTRB(16, compact ? 0 : 8, 16, 12),
         padding: EdgeInsets.symmetric(horizontal: 22, vertical: compact ? 8 : 18),
@@ -489,17 +490,32 @@ class _CalculatorPageState extends State<CalculatorPage> {
                     ),
                   ),
                   const SizedBox(height: 2),
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerRight,
-                    child: Text(
-                      main,
-                      maxLines: 1,
-                      style: TextStyle(
-                        fontSize: compact ? 34 : 56,
-                        fontWeight: FontWeight.w300,
-                        letterSpacing: -1,
-                        color: isError ? Theme.of(context).colorScheme.error : g.text,
+                  // The number gives a tiny pop every time it changes.
+                  TweenAnimationBuilder<double>(
+                    key: ValueKey<String>(main),
+                    tween: Tween<double>(begin: 0, end: 1),
+                    duration: Duration(milliseconds: MediaQuery.of(context).disableAnimations ? 0 : 200),
+                    curve: Curves.easeOutBack,
+                    builder: (context, t, child) => Transform.translate(
+                      offset: Offset(0, -4 * (1 - t)),
+                      child: Transform.scale(
+                        scale: 1.045 - 0.045 * t,
+                        alignment: Alignment.centerRight,
+                        child: child,
+                      ),
+                    ),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                        main,
+                        maxLines: 1,
+                        style: TextStyle(
+                          fontSize: compact ? 34 : 56,
+                          fontWeight: FontWeight.w400,
+                          letterSpacing: -1,
+                          color: isError ? Theme.of(context).colorScheme.error : g.text,
+                        ),
                       ),
                     ),
                   ),
@@ -514,22 +530,22 @@ class _CalculatorPageState extends State<CalculatorPage> {
 
   @override
   Widget build(BuildContext context) {
-    final g = GlassStyle.of(context);
+    final g = NeoStyle.of(context);
     final style = SettingsScope.of(context).numberStyle;
     final landscape = MediaQuery.of(context).orientation == Orientation.landscape;
 
     final header = ScreenHeader(
       actions: [
         if (!landscape)
-          IconButton(
+          NeoIconButton(
             tooltip: _scientific ? 'Basic mode' : 'Scientific mode',
-            isSelected: _scientific,
-            icon: const Icon(Icons.functions),
+            icon: Icons.functions,
             onPressed: () => setState(() => _scientific = !_scientific),
           ),
-        IconButton(
+        if (!landscape) const SizedBox(width: 10),
+        NeoIconButton(
           tooltip: 'History',
-          icon: const Icon(Icons.history),
+          icon: Icons.history,
           onPressed: _showHistory,
         ),
       ],
@@ -598,7 +614,7 @@ class _CalcButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final g = GlassStyle.of(context);
+    final g = NeoStyle.of(context);
 
     var fg = g.text;
     List<Color>? gradient;
@@ -644,7 +660,7 @@ class _CalcButton extends StatelessWidget {
             ),
           );
 
-    final button = GlassKey(
+    final button = NeoKey(
       onTap: onTap,
       gradient: gradient,
       glow: glow,

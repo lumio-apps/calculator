@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+import 'neo.dart';
 import 'settings_page.dart';
 import 'update_service.dart';
 
@@ -61,6 +62,7 @@ class AppMenuButton extends StatelessWidget {
           ),
         ),
       ],
+      child: const NeoCircleIcon(Icons.more_vert),
     );
   }
 }

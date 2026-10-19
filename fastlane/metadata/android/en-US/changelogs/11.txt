@@ -1,0 +1,3 @@
+• New soft design: raised and pressed-in surfaces with smooth little animations
+• Keys sink in when pressed, the number pops, the navigation bar slides
+• "Reduce transparency" is now "Reduce effects" (flat panels, no soft shadows)

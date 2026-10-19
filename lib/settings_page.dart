@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'app_menu.dart';
-import 'glass.dart';
+import 'neo.dart';
 import 'settings.dart';
 import 'update_service.dart';
 
@@ -23,7 +23,7 @@ class SettingsPage extends StatelessWidget {
     final s = SettingsScope.of(context);
     final cs = Theme.of(context).colorScheme;
 
-    return GlassBackdrop(
+    return NeoBackdrop(
       child: Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
@@ -88,10 +88,10 @@ class SettingsPage extends StatelessWidget {
               ),
             ),
             SwitchListTile(
-              title: const Text('Reduce transparency'),
-              subtitle: const Text('Solid panels, no blur. Can feel smoother on older phones'),
-              value: s.reduceTransparency,
-              onChanged: (v) => s.reduceTransparency = v,
+              title: const Text('Reduce effects'),
+              subtitle: const Text('Flat panels, no soft shadows. Can feel smoother on older phones'),
+              value: s.reduceEffects,
+              onChanged: (v) => s.reduceEffects = v,
             ),
             _sectionTitle(context, 'Numbers'),
             ListTile(

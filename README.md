@@ -18,7 +18,7 @@ No ads. No tracking. Free and open source.
 ## Screenshots
 
 <p align="center">
-  <img src="screenshots/calculator.jpg" alt="Calculator with the glass design" width="200">
+  <img src="screenshots/calculator.jpg" alt="Calculator" width="200">
   <img src="screenshots/converter.jpg" alt="Unit converter" width="200">
   <img src="screenshots/tools.jpg" alt="Everyday tools" width="200">
 </p>
@@ -58,7 +58,7 @@ Length · Weight · Temperature · Area · Volume · Speed · Time · Data · Fu
 - Number formats for every region: `1,234.56` · `1.234,56` · `1 234,56` · `12,34,567.89`
 - Choose how many decimal places to show
 - Turn key vibration on or off
-- Glass design with an aurora background, and a "Reduce transparency" switch for a solid look
+- Soft neumorphic design with smooth animations, and a "Reduce effects" switch for a flat look
 
 ## Privacy
 

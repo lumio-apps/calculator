@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import 'app_menu.dart';
-import 'glass.dart';
+import 'neo.dart';
 import 'settings.dart';
 import 'widgets.dart';
 
@@ -30,7 +30,7 @@ class ToolsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final g = GlassStyle.of(context);
+    final g = NeoStyle.of(context);
     return Column(
       children: [
         const ScreenHeader(title: 'Tools'),
@@ -38,22 +38,34 @@ class ToolsPage extends StatelessWidget {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
             children: [
-              for (final t in _tools)
-                GlassPanel(
-                  radius: 24,
-                  margin: const EdgeInsets.symmetric(vertical: 6),
-                  child: ListTile(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                    leading: CircleAvatar(
-                      backgroundColor: g.accent.withAlpha(g.dark ? 46 : 90),
-                      foregroundColor: g.op,
-                      child: Icon(t.icon),
+              for (var i = 0; i < _tools.length; i++)
+                // The cards rise into place one after another.
+                TweenAnimationBuilder<double>(
+                  tween: Tween<double>(begin: 0, end: 1),
+                  duration: Duration(milliseconds: MediaQuery.of(context).disableAnimations ? 0 : 320 + i * 90),
+                  curve: Curves.easeOutCubic,
+                  builder: (context, t, child) => Opacity(
+                    opacity: t,
+                    child: Transform.translate(offset: Offset(0, 16 * (1 - t)), child: child),
+                  ),
+                  child: NeoCard(
+                    margin: const EdgeInsets.symmetric(vertical: 9, horizontal: 4),
+                    onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: _tools[i].builder)),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                      leading: SizedBox(
+                        width: 52,
+                        height: 52,
+                        child: NeoPanel(
+                          inset: true,
+                          radius: 26,
+                          child: Icon(_tools[i].icon, color: g.op),
+                        ),
+                      ),
+                      title: Text(_tools[i].title, style: const TextStyle(fontWeight: FontWeight.w600)),
+                      subtitle: Text(_tools[i].subtitle),
+                      trailing: Icon(Icons.chevron_right, color: g.textDim),
                     ),
-                    title: Text(t.title),
-                    subtitle: Text(t.subtitle),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: t.builder)),
                   ),
                 ),
             ],
@@ -241,7 +253,7 @@ class _PercentagePageState extends State<PercentagePage> {
   Widget _section(String title, Widget a, Widget b, String result) {
     final cs = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
-    return GlassPanel(
+    return NeoPanel(
       radius: 24,
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
