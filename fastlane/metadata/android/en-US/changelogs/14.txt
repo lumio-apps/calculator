@@ -1,0 +1,2 @@
+• New tool: Number base converter (decimal, hex, binary, octal)
+• New tool: Fuel / trip cost

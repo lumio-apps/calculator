@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'settings.dart';
 import 'widgets.dart';
@@ -203,6 +204,181 @@ class _TimePageState extends State<TimePage> {
           ],
           footnote: 'Use the + / − button to add or subtract each line.',
         ),
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Number base converter
+
+class BasePage extends StatefulWidget {
+  const BasePage({super.key});
+
+  @override
+  State<BasePage> createState() => _BasePageState();
+}
+
+class _BasePageState extends State<BasePage> {
+  final _input = TextEditingController(text: '255');
+  int _base = 10;
+
+  static const _bases = <(String, int)>[
+    ('DEC', 10),
+    ('HEX', 16),
+    ('BIN', 2),
+    ('OCT', 8),
+  ];
+
+  @override
+  void dispose() {
+    _input.dispose();
+    super.dispose();
+  }
+
+  String _group(String digits, int size) {
+    final negative = digits.startsWith('-');
+    final body = negative ? digits.substring(1) : digits;
+    final parts = <String>[];
+    for (var end = body.length; end > 0; end -= size) {
+      parts.insert(0, body.substring(end - size < 0 ? 0 : end - size, end));
+    }
+    return '${negative ? '-' : ''}${parts.join(' ')}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final raw = _input.text.trim().replaceAll(' ', '');
+    final value = raw.isEmpty ? null : BigInt.tryParse(raw, radix: _base);
+    final invalid = raw.isNotEmpty && raw != '-' && value == null;
+
+    final rows = <ResultRow>[];
+    if (value != null) {
+      rows.addAll([
+        ResultRow('Decimal', value.toString(), highlight: _base != 10),
+        ResultRow('Hexadecimal', value.toRadixString(16).toUpperCase()),
+        ResultRow('Binary', _group(value.toRadixString(2), 4)),
+        ResultRow('Octal', value.toRadixString(8)),
+      ]);
+    }
+
+    return ToolScaffold(
+      title: 'Number base',
+      children: [
+        SegmentedButton<int>(
+          segments: [
+            for (final b in _bases) ButtonSegment(value: b.$2, label: Text(b.$1)),
+          ],
+          selected: {_base},
+          showSelectedIcon: false,
+          onSelectionChanged: (v) => setState(() => _base = v.first),
+        ),
+        gap24,
+        TextField(
+          controller: _input,
+          autocorrect: false,
+          enableSuggestions: false,
+          textCapitalization: TextCapitalization.characters,
+          keyboardType: _base == 16 ? TextInputType.visiblePassword : TextInputType.text,
+          inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9a-fA-F\- ]'))],
+          style: Theme.of(context).textTheme.titleLarge,
+          decoration: InputDecoration(
+            labelText: 'Number in base $_base',
+            errorText: invalid ? 'Not a valid base $_base number' : null,
+            filled: true,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(18),
+              borderSide: BorderSide.none,
+            ),
+          ),
+          onChanged: (_) => setState(() {}),
+        ),
+        gap24,
+        if (rows.isNotEmpty)
+          ResultCard(rows: rows, footnote: 'Works with very large whole numbers. Negative numbers start with −.'),
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Fuel / trip cost
+
+class FuelPage extends StatefulWidget {
+  const FuelPage({super.key});
+
+  @override
+  State<FuelPage> createState() => _FuelPageState();
+}
+
+class _FuelPageState extends State<FuelPage> {
+  final _distance = TextEditingController(text: '250');
+  final _economy = TextEditingController(text: '15');
+  final _price = TextEditingController(text: '100');
+  bool _perLitre = true; // true: km per litre, false: litres per 100 km
+  bool _roundTrip = false;
+
+  @override
+  void dispose() {
+    _distance.dispose();
+    _economy.dispose();
+    _price.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = SettingsScope.of(context);
+    final distance = parseInput(_distance.text, s.numberStyle);
+    final economy = parseInput(_economy.text, s.numberStyle);
+    final price = parseInput(_price.text, s.numberStyle);
+    void refresh(String _) => setState(() {});
+
+    final rows = <ResultRow>[];
+    if (distance != null && economy != null && price != null && distance > 0 && economy > 0 && price >= 0) {
+      final km = _roundTrip ? distance * 2 : distance;
+      final litres = _perLitre ? km / economy : km * economy / 100;
+      final cost = litres * price;
+      rows.addAll([
+        ResultRow('Trip distance', '${s.number(km, decimals: 1)} km'),
+        ResultRow('Fuel needed', '${s.number(litres, decimals: 2)} L'),
+        ResultRow('Cost per km', s.money(cost / km)),
+        ResultRow('Trip cost', s.money(cost), highlight: true),
+      ]);
+    }
+
+    return ToolScaffold(
+      title: 'Fuel / trip cost',
+      children: [
+        NumberField(controller: _distance, label: 'Distance (one way)', suffix: 'km', onChanged: refresh),
+        gap16,
+        SegmentedButton<bool>(
+          segments: const [
+            ButtonSegment(value: true, label: Text('km / L')),
+            ButtonSegment(value: false, label: Text('L / 100 km')),
+          ],
+          selected: {_perLitre},
+          showSelectedIcon: false,
+          onSelectionChanged: (v) => setState(() => _perLitre = v.first),
+        ),
+        const SizedBox(height: 12),
+        NumberField(
+          controller: _economy,
+          label: _perLitre ? 'Mileage' : 'Fuel use',
+          suffix: _perLitre ? 'km/L' : 'L/100km',
+          onChanged: refresh,
+        ),
+        gap16,
+        NumberField(controller: _price, label: 'Fuel price per litre', onChanged: refresh),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Round trip'),
+          subtitle: const Text('Count the way back too'),
+          value: _roundTrip,
+          onChanged: (v) => setState(() => _roundTrip = v),
+        ),
+        gap16,
+        if (rows.isNotEmpty) ResultCard(rows: rows),
       ],
     );
   }
