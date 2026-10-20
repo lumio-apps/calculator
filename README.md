@@ -34,7 +34,8 @@ No ads. No tracking. Free and open source.
 - Live result preview while you type
 - **Scientific mode**: sin, cos, tan, ln, log, √, x², xʸ, 1/x, π and e, with degrees or radians
 - Opens automatically when you rotate your phone
-- **History** that is saved on your device; tap an entry to reuse it
+- **Memory keys**: MC, MR, M+ and M−
+- **History** that is saved on your device; tap an entry to reuse it, search it, and pin important calculations to the top
 - Long-press the display to **copy**, **paste** or **share** a result
 - Swipe the display to delete the last digit
 
@@ -46,11 +47,18 @@ Length · Weight · Temperature · Area · Volume · Speed · Time · Data · Fu
 - **Discount & Tax**: sale price, savings, VAT / GST / sales tax
 - **Tip & Split**: tip amount and how much each person pays
 - **Percentage**: X% of Y, X as a percent of Y, percent change
+- **GST**: add or remove GST with 5, 12, 18 and 28% buttons, with the CGST and SGST split
 - **Loan / EMI**: monthly payment, total interest and total paid
+- **SIP, Fixed Deposit, Recurring Deposit and Compound interest**: invested amount, interest earned and final value
 - **BMI**: metric or imperial, with the healthy range for your height
+- **Time calculator**: add and subtract hours and minutes
+- **Number base converter**: decimal, hexadecimal, binary and octal
+- **Fuel / trip cost**: fuel needed and total cost for a trip
 
 ### Date calculator
 - Days between two dates, in years, months, weeks and days
+- Add or subtract days, months and years from a date, with a working days option (skips Saturday and Sunday)
+- Working days between two dates
 - Exact age from a date of birth, the weekday you were born and days until your next birthday
 
 ### Make it yours
