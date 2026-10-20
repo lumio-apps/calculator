@@ -3,6 +3,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import 'app_menu.dart';
+import 'invest_pages.dart';
+import 'more_tools.dart';
 import 'neo.dart';
 import 'settings.dart';
 import 'widgets.dart';
@@ -20,7 +22,13 @@ final _tools = <_ToolInfo>[
   _ToolInfo('Discount & Tax', 'Sale price, VAT or GST', Icons.local_offer_outlined, (_) => const DiscountTaxPage()),
   _ToolInfo('Tip & Split', 'Tip and split the bill', Icons.restaurant_outlined, (_) => const TipSplitPage()),
   _ToolInfo('Percentage', 'Percent of, ratio and change', Icons.percent, (_) => const PercentagePage()),
+  _ToolInfo('GST', 'Add or remove GST: 5, 12, 18, 28%', Icons.receipt_long_outlined, (_) => const GstPage()),
+  _ToolInfo('Time calculator', 'Add and subtract hours and minutes', Icons.schedule, (_) => const TimePage()),
   _ToolInfo('Loan / EMI', 'Monthly payment and interest', Icons.account_balance_outlined, (_) => const LoanPage()),
+  _ToolInfo('SIP', 'Monthly investing over time', Icons.trending_up, (_) => const InvestPage(InvestKind.sip)),
+  _ToolInfo('Fixed Deposit', 'Maturity value of an FD', Icons.savings_outlined, (_) => const InvestPage(InvestKind.fd)),
+  _ToolInfo('Recurring Deposit', 'Save a fixed amount monthly', Icons.event_repeat, (_) => const InvestPage(InvestKind.rd)),
+  _ToolInfo('Compound interest', 'Growth with any frequency', Icons.show_chart, (_) => const InvestPage(InvestKind.compound)),
   _ToolInfo('BMI', 'Body mass index', Icons.monitor_weight_outlined, (_) => const BmiPage()),
 ];
 

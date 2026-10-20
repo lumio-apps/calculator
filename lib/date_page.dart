@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 
 import 'app_menu.dart';
 import 'neo.dart';
+import 'settings.dart';
+import 'widgets.dart';
 
-enum _DateMode { difference, age }
+enum _DateMode { difference, addSub, age }
 
 class DatePage extends StatefulWidget {
   const DatePage({super.key});
@@ -16,12 +18,26 @@ class _DatePageState extends State<DatePage> {
   _DateMode _mode = _DateMode.difference;
   late DateTime _from = _today;
   late DateTime _to = _today;
+  late DateTime _start = _today;
+  bool _subtract = false;
+  bool _workingOnly = false;
+  final _addYears = TextEditingController(text: '0');
+  final _addMonths = TextEditingController(text: '0');
+  final _addDays = TextEditingController(text: '30');
   late DateTime _birth = DateTime(_today.year - 25, _today.month, _today.day);
 
   static DateTime get _today => DateUtils.dateOnly(DateTime.now());
 
   static const _months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   static const _weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+  @override
+  void dispose() {
+    _addYears.dispose();
+    _addMonths.dispose();
+    _addDays.dispose();
+    super.dispose();
+  }
 
   String _fmt(DateTime d) => '${d.day} ${_months[d.month - 1]} ${d.year}';
 
@@ -58,6 +74,40 @@ class _DatePageState extends State<DatePage> {
       if (d > 0 || (y == 0 && m == 0)) _plural(d, 'day'),
     ];
     return parts.join(', ');
+  }
+
+  /// Monday to Friday days after [a], up to and including [b].
+  int _workingDaysBetween(DateTime a, DateTime b) {
+    var count = 0;
+    var d = DateTime(a.year, a.month, a.day);
+    final end = DateTime(b.year, b.month, b.day);
+    while (d.isBefore(end)) {
+      d = DateTime(d.year, d.month, d.day + 1);
+      if (d.weekday <= DateTime.friday) count++;
+    }
+    return count;
+  }
+
+  /// [date] moved by [months] months, keeping the day when the month is long enough.
+  DateTime _addMonthsTo(DateTime date, int months) {
+    final index = date.year * 12 + (date.month - 1) + months;
+    final year = index ~/ 12;
+    final month = index % 12 + 1;
+    final day = date.day > DateUtils.getDaysInMonth(year, month) ? DateUtils.getDaysInMonth(year, month) : date.day;
+    return DateTime(year, month, day);
+  }
+
+  /// Moves [date] by [days] days, counting only Monday to Friday when [working] is true.
+  DateTime _addDaysTo(DateTime date, int days, {required bool working}) {
+    if (!working) return DateTime(date.year, date.month, date.day + days);
+    final step = days < 0 ? -1 : 1;
+    var left = days.abs();
+    var d = date;
+    while (left > 0) {
+      d = DateTime(d.year, d.month, d.day + step);
+      if (d.weekday <= DateTime.friday) left--;
+    }
+    return d;
   }
 
   Future<DateTime?> _pick(DateTime initial) {
@@ -144,8 +194,64 @@ class _DatePageState extends State<DatePage> {
         _resultCard('Difference', _plural(days, 'day'), [
           _ymdText(a, b),
           '${_plural(days ~/ 7, 'week')}, ${_plural(days % 7, 'day')}',
+          '${_plural(_workingDaysBetween(a, b), 'working day')} (Mon–Fri)',
           if (swapped) 'The "From" date is after the "To" date.',
         ]),
+      ],
+    );
+  }
+
+  Widget _addSubView() {
+    final style = SettingsScope.of(context).numberStyle;
+    int n(TextEditingController c) => (parseInput(c.text, style) ?? 0).round().abs();
+    void refresh(String _) => setState(() {});
+    final sign = _subtract ? -1 : 1;
+    final years = n(_addYears), months = n(_addMonths), days = n(_addDays);
+    DateTime? result;
+    if (years <= 200 && months <= 2400 && days <= 100000) {
+      final shifted = _addMonthsTo(_start, sign * (years * 12 + months));
+      result = _addDaysTo(shifted, sign * days, working: _workingOnly);
+    }
+    final inRange = result != null && result.year >= 1 && result.year <= 9999;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _dateField('Start date', _start, (d) => setState(() => _start = d)),
+        const SizedBox(height: 16),
+        SegmentedButton<bool>(
+          segments: const [
+            ButtonSegment(value: false, icon: Icon(Icons.add), label: Text('Add')),
+            ButtonSegment(value: true, icon: Icon(Icons.remove), label: Text('Subtract')),
+          ],
+          selected: {_subtract},
+          onSelectionChanged: (v) => setState(() => _subtract = v.first),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(child: NumberField(controller: _addYears, label: 'Years', onChanged: refresh)),
+            const SizedBox(width: 10),
+            Expanded(child: NumberField(controller: _addMonths, label: 'Months', onChanged: refresh)),
+            const SizedBox(width: 10),
+            Expanded(child: NumberField(controller: _addDays, label: 'Days', onChanged: refresh)),
+          ],
+        ),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Working days only'),
+          subtitle: const Text('Days skip Saturday and Sunday'),
+          value: _workingOnly,
+          onChanged: (v) => setState(() => _workingOnly = v),
+        ),
+        const SizedBox(height: 8),
+        if (result != null && inRange)
+          _resultCard(_subtract ? 'Date before' : 'Date after', _fmt(result), [
+            _weekdays[result.weekday - 1],
+            '${_plural(_daysBetween(_start, result).abs(), 'day')} ${_subtract ? 'earlier' : 'later'} in total',
+          ])
+        else
+          _resultCard('Date', 'Out of range', ['Try smaller numbers.']),
       ],
     );
   }
@@ -197,22 +303,19 @@ class _DatePageState extends State<DatePage> {
             children: [
               SegmentedButton<_DateMode>(
                 segments: const [
-                  ButtonSegment(
-                    value: _DateMode.difference,
-                    icon: Icon(Icons.date_range),
-                    label: Text('Days between'),
-                  ),
-                  ButtonSegment(
-                    value: _DateMode.age,
-                    icon: Icon(Icons.cake_outlined),
-                    label: Text('Age'),
-                  ),
+                  ButtonSegment(value: _DateMode.difference, label: Text('Between')),
+                  ButtonSegment(value: _DateMode.addSub, label: Text('Add / subtract')),
+                  ButtonSegment(value: _DateMode.age, label: Text('Age')),
                 ],
                 selected: {_mode},
                 onSelectionChanged: (s) => setState(() => _mode = s.first),
               ),
               const SizedBox(height: 24),
-              if (_mode == _DateMode.difference) _differenceView() else _ageView(),
+              switch (_mode) {
+                _DateMode.difference => _differenceView(),
+                _DateMode.addSub => _addSubView(),
+                _DateMode.age => _ageView(),
+              },
             ],
           ),
         ),

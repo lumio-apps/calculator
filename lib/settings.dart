@@ -47,6 +47,7 @@ class AppSettings extends ChangeNotifier {
     _decimalPlaces = (_prefs.getInt('decimals') ?? 10).clamp(0, 10);
     _numberStyle = NumberStyle.values[(_prefs.getInt('numberStyle') ?? 1).clamp(0, NumberStyle.values.length - 1)];
     _history = _prefs.getStringList('history') ?? <String>[];
+    _pinned = _prefs.getStringList('pinned') ?? <String>[];
   }
 
   static Future<AppSettings> load() async => AppSettings._(await SharedPreferences.getInstance());
@@ -60,6 +61,7 @@ class AppSettings extends ChangeNotifier {
   late int _decimalPlaces;
   late NumberStyle _numberStyle;
   late List<String> _history;
+  late List<String> _pinned;
 
   ThemeMode get themeMode => _themeMode;
   int get accentIndex => _accentIndex;
@@ -69,6 +71,7 @@ class AppSettings extends ChangeNotifier {
   int get decimalPlaces => _decimalPlaces;
   NumberStyle get numberStyle => _numberStyle;
   List<String> get history => List.unmodifiable(_history);
+  List<String> get pinned => List.unmodifiable(_pinned);
 
   set themeMode(ThemeMode v) {
     _themeMode = v;
@@ -113,9 +116,25 @@ class AppSettings extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Clears the history. Pinned entries stay.
   void clearHistory() {
     _history.clear();
     _prefs.setStringList('history', _history);
+    notifyListeners();
+  }
+
+  /// Pins an entry (moves it to the top list) or unpins it (moves it back to history).
+  void togglePin(String entry) {
+    if (_pinned.contains(entry)) {
+      _pinned.remove(entry);
+      _history.insert(0, entry);
+      if (_history.length > 100) _history.removeRange(100, _history.length);
+    } else {
+      _history.remove(entry);
+      _pinned.insert(0, entry);
+    }
+    _prefs.setStringList('history', _history);
+    _prefs.setStringList('pinned', _pinned);
     notifyListeners();
   }
 

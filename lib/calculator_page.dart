@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import 'app_menu.dart';
 import 'expression_parser.dart';
+import 'history_sheet.dart';
 import 'neo.dart';
 import 'settings.dart';
 import 'share.dart';
@@ -21,6 +22,7 @@ class _CalculatorPageState extends State<CalculatorPage> {
   bool _justEvaluated = false;
   bool _scientific = false;
   bool _degrees = true;
+  double? _memory;
 
   static const _ops = ['+', '−', '×', '÷', '^'];
   static const _funcTokens = ['sin(', 'cos(', 'tan(', 'ln(', 'log(', '√('];
@@ -32,6 +34,8 @@ class _CalculatorPageState extends State<CalculatorPage> {
     ['1', '2', '3', '+'],
     ['( )', '0', '.', '='],
   ];
+
+  static const _memoryKeys = ['MC', 'MR', 'M+', 'M−'];
 
   static const _sciKeys = ['DEG', 'sin', 'cos', 'tan', 'ln', 'log', '√', 'x²', 'xʸ', 'π', 'e', '1/x'];
 
@@ -112,6 +116,18 @@ class _CalculatorPageState extends State<CalculatorPage> {
         case 'DEG':
           _degrees = !_degrees;
           break;
+        case 'MC':
+          _memory = null;
+          break;
+        case 'MR':
+          _recallMemory();
+          break;
+        case 'M+':
+          _changeMemory(1);
+          break;
+        case 'M−':
+          _changeMemory(-1);
+          break;
         case 'sin':
         case 'cos':
         case 'tan':
@@ -146,6 +162,37 @@ class _CalculatorPageState extends State<CalculatorPage> {
       }
       _update();
     });
+  }
+
+  /// The value on screen right now, or null when the expression is not complete.
+  double? get _currentValue {
+    if (_expr.isEmpty) return 0;
+    try {
+      final v = ExpressionParser(_close(_expr), degrees: _degrees).parse();
+      return v.isFinite ? v : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void _changeMemory(int sign) {
+    final v = _currentValue;
+    if (v == null) {
+      _preview = 'Error';
+      return;
+    }
+    _memory = (_memory ?? 0) + sign * v;
+    _justEvaluated = true;
+  }
+
+  void _recallMemory() {
+    final m = _memory;
+    if (m == null) return;
+    _startFresh();
+    var number = formatNumber(m, decimals: 10);
+    if (_endsWithValue) _expr += '×';
+    if (number.startsWith('−') && _expr.isNotEmpty) number = '($number)';
+    _expr += number;
   }
 
   void _startFresh() {
@@ -335,48 +382,15 @@ class _CalculatorPageState extends State<CalculatorPage> {
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
-      builder: (ctx) {
-        final history = SettingsScope.of(ctx).history;
-        final style = SettingsScope.of(ctx).numberStyle;
-        return SafeArea(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxHeight: MediaQuery.of(ctx).size.height * 0.7),
-            child: history.isEmpty
-                ? const SizedBox(height: 160, child: Center(child: Text('No history yet')))
-                : ListView(
-                    shrinkWrap: true,
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                    children: [
-                      for (final h in history)
-                        ListTile(
-                          title: Text(formatExpression(h, style), textAlign: TextAlign.right),
-                          onTap: () {
-                            setState(() {
-                              _expr = h.split(' = ').last;
-                              _justEvaluated = true;
-                              _preview = '';
-                            });
-                            Navigator.pop(ctx);
-                          },
-                          onLongPress: () {
-                            Clipboard.setData(ClipboardData(text: h.replaceAll('−', '-')));
-                            ScaffoldMessenger.of(context)
-                                .showSnackBar(const SnackBar(content: Text('Copied')));
-                          },
-                        ),
-                      TextButton.icon(
-                        onPressed: () {
-                          _settings.clearHistory();
-                          Navigator.pop(ctx);
-                        },
-                        icon: const Icon(Icons.delete_outline),
-                        label: const Text('Clear history'),
-                      ),
-                    ],
-                  ),
-          ),
-        );
-      },
+      builder: (ctx) => HistorySheet(
+        onPick: (expression) {
+          setState(() {
+            _expr = expression;
+            _justEvaluated = true;
+            _preview = '';
+          });
+        },
+      ),
     );
   }
 
@@ -423,6 +437,44 @@ class _CalculatorPageState extends State<CalculatorPage> {
     return rows;
   }
 
+  Widget _badge(NeoStyle g, String text, VoidCallback onTap) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          color: g.accent.withAlpha(g.dark ? 36 : 60),
+          border: Border.all(color: g.op.withAlpha(110)),
+        ),
+        child: Text(
+          text,
+          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: g.op),
+        ),
+      ),
+    );
+  }
+
+  Widget _memoryRow() {
+    return SizedBox(
+      height: 44,
+      child: Row(
+        children: [
+          for (final k in _memoryKeys)
+            Expanded(
+              child: _CalcButton(
+                label: k,
+                kind: _KeyKind.memory,
+                small: true,
+                onTap: () => _press(k),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   Widget _display(NeoStyle g, NumberStyle style, {required bool compact, required bool showAngle}) {
     final hasPreview = _preview.isNotEmpty;
     final isError = _preview == 'Error';
@@ -450,26 +502,17 @@ class _CalculatorPageState extends State<CalculatorPage> {
         padding: EdgeInsets.symmetric(horizontal: 22, vertical: compact ? 8 : 18),
         child: Stack(
           children: [
-            if (showAngle)
-              Align(
-                alignment: Alignment.topLeft,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(12),
-                  onTap: () => _press('DEG'),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      color: g.accent.withAlpha(g.dark ? 36 : 60),
-                      border: Border.all(color: g.op.withAlpha(110)),
-                    ),
-                    child: Text(
-                      _degrees ? 'DEG' : 'RAD',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: g.op),
-                    ),
-                  ),
-                ),
+            Align(
+              alignment: Alignment.topLeft,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (showAngle) _badge(g, _degrees ? 'DEG' : 'RAD', () => _press('DEG')),
+                  if (showAngle && _memory != null) const SizedBox(width: 8),
+                  if (_memory != null) _badge(g, 'M', () => _press('MR')),
+                ],
               ),
+            ),
             Align(
               alignment: Alignment.bottomRight,
               child: Column(
@@ -562,7 +605,15 @@ class _CalculatorPageState extends State<CalculatorPage> {
               padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
               child: Row(
                 children: [
-                  Expanded(flex: 3, child: _keyGrid(_sciRows(3), small: true)),
+                  Expanded(
+                    flex: 3,
+                    child: Column(
+                      children: [
+                        _memoryRow(),
+                        Expanded(child: _keyGrid(_sciRows(3), small: true)),
+                      ],
+                    ),
+                  ),
                   const SizedBox(width: 8),
                   Expanded(flex: 4, child: _keyGrid(_basicRows, small: true)),
                 ],
@@ -585,6 +636,10 @@ class _CalculatorPageState extends State<CalculatorPage> {
               child: _keyGrid(_sciRows(6), small: true),
             ),
           ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: _memoryRow(),
+        ),
         Expanded(
           flex: 4,
           child: Padding(
@@ -597,7 +652,7 @@ class _CalculatorPageState extends State<CalculatorPage> {
   }
 }
 
-enum _KeyKind { digit, op, action, equals, scientific }
+enum _KeyKind { digit, op, action, equals, scientific, memory }
 
 class _CalcButton extends StatelessWidget {
   const _CalcButton({
@@ -636,12 +691,15 @@ class _CalcButton extends StatelessWidget {
         fg = g.op;
         tint = g.accent;
         break;
+      case _KeyKind.memory:
+        fg = g.textDim;
+        break;
       case _KeyKind.digit:
         break;
     }
 
     final big = kind == _KeyKind.op || kind == _KeyKind.equals;
-    final fontSize = small ? (kind == _KeyKind.scientific ? 16.0 : 22.0) : (big ? 30.0 : 27.0);
+    final fontSize = small ? (kind == _KeyKind.scientific || kind == _KeyKind.memory ? 16.0 : 22.0) : (big ? 30.0 : 27.0);
 
     final content = label == '⌫'
         ? Icon(Icons.backspace_outlined, color: fg, size: small ? 20 : 24)
