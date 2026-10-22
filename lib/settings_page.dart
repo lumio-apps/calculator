@@ -87,12 +87,6 @@ class SettingsPage extends StatelessWidget {
                 ],
               ),
             ),
-            SwitchListTile(
-              title: const Text('Reduce effects'),
-              subtitle: const Text('Flat panels, no soft shadows. Can feel smoother on older phones'),
-              value: s.reduceEffects,
-              onChanged: (v) => s.reduceEffects = v,
-            ),
             _sectionTitle(context, 'Numbers'),
             ListTile(
               title: const Text('Number format'),

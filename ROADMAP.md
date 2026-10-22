@@ -18,9 +18,12 @@ Features are added slowly, a few at a time. Tick a box when it is released.
 - [x] **GST calculator**: add or remove GST with quick 5 / 12 / 18 / 28% buttons
 - [x] **Time calculator**: add and subtract hours and minutes (`2h 45m + 1h 30m`)
 
-## v1.8.0 – For makers and travellers  _(current)_
+## v1.8.0 – For makers and travellers
 - [x] **Number base converter**: binary, octal, decimal, hexadecimal
 - [x] **Fuel / trip cost**: distance, mileage and fuel price give the total cost
+
+## v1.9.0 – Light and fast design  _(current)_
+- [x] Flat, light look: no blurred shadows, no heavy animations, "Reduce effects" switch removed
 
 ## Later (ideas, not promised)
 - [ ] Currency converter with **manual rates** (no internet needed)
@@ -29,8 +32,8 @@ Features are added slowly, a few at a time. Tick a box when it is released.
 ## Checklist for every release
 1. Code the feature on a separate branch or commit
 2. `flutter analyze` shows no issues
-3. Test on a real phone: light theme, dark theme, landscape, "Reduce effects" on and off
-4. Bump `version` in `pubspec.yaml` (for example `1.9.0+15`; the number after `+` always goes up)
+3. Test on a real phone: light theme, dark theme, landscape
+4. Bump `version` in `pubspec.yaml` (for example `1.10.0+16`; the number after `+` always goes up)
 5. Add `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt`
 6. Update the feature list in `README.md`
 7. Commit, push, then `git tag vX.Y.Z` and `git push origin vX.Y.Z`

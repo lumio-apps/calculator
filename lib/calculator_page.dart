@@ -495,11 +495,8 @@ class _CalculatorPageState extends State<CalculatorPage> {
           });
         }
       },
-      child: NeoPanel(
-        inset: true,
-        radius: 32,
-        margin: EdgeInsets.fromLTRB(16, compact ? 0 : 8, 16, 12),
-        padding: EdgeInsets.symmetric(horizontal: 22, vertical: compact ? 8 : 18),
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(24, compact ? 8 : 16, 24, compact ? 12 : 22),
         child: Stack(
           children: [
             Align(
@@ -533,32 +530,17 @@ class _CalculatorPageState extends State<CalculatorPage> {
                     ),
                   ),
                   const SizedBox(height: 2),
-                  // The number gives a tiny pop every time it changes.
-                  TweenAnimationBuilder<double>(
-                    key: ValueKey<String>(main),
-                    tween: Tween<double>(begin: 0, end: 1),
-                    duration: Duration(milliseconds: MediaQuery.of(context).disableAnimations ? 0 : 200),
-                    curve: Curves.easeOutBack,
-                    builder: (context, t, child) => Transform.translate(
-                      offset: Offset(0, -4 * (1 - t)),
-                      child: Transform.scale(
-                        scale: 1.045 - 0.045 * t,
-                        alignment: Alignment.centerRight,
-                        child: child,
-                      ),
-                    ),
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerRight,
-                      child: Text(
-                        main,
-                        maxLines: 1,
-                        style: TextStyle(
-                          fontSize: compact ? 34 : 56,
-                          fontWeight: FontWeight.w400,
-                          letterSpacing: -1,
-                          color: isError ? Theme.of(context).colorScheme.error : g.text,
-                        ),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      main,
+                      maxLines: 1,
+                      style: TextStyle(
+                        fontSize: compact ? 34 : 56,
+                        fontWeight: FontWeight.w400,
+                        letterSpacing: -1,
+                        color: isError ? Theme.of(context).colorScheme.error : g.text,
                       ),
                     ),
                   ),
@@ -672,14 +654,11 @@ class _CalcButton extends StatelessWidget {
     final g = NeoStyle.of(context);
 
     var fg = g.text;
-    List<Color>? gradient;
-    Color? glow;
-    Color? tint;
+    Color? fill;
     switch (kind) {
       case _KeyKind.equals:
-        gradient = g.equalsGradient;
+        fill = g.equalsFill;
         fg = g.onEquals;
-        glow = g.equalsGradient[1];
         break;
       case _KeyKind.op:
         fg = g.op;
@@ -689,7 +668,6 @@ class _CalcButton extends StatelessWidget {
         break;
       case _KeyKind.scientific:
         fg = g.op;
-        tint = g.accent;
         break;
       case _KeyKind.memory:
         fg = g.textDim;
@@ -720,17 +698,14 @@ class _CalcButton extends StatelessWidget {
 
     final button = NeoKey(
       onTap: onTap,
-      gradient: gradient,
-      glow: glow,
-      tint: tint,
+      fill: fill,
       semanticsLabel: label == '⌫' ? 'Backspace' : null,
       child: content,
     );
 
     return Padding(
       padding: EdgeInsets.all(small ? 3 : 5),
-      // Big keys stay perfectly round; small (scientific / landscape) keys stretch into pills.
-      child: small ? button : Center(child: AspectRatio(aspectRatio: 1, child: button)),
+      child: button,
     );
   }
 }

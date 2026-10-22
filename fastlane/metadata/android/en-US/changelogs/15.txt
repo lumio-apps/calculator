@@ -1,0 +1,2 @@
+• New light design: flat keys and cards, faster on every phone
+• Removed the "Reduce effects" switch, since the app is now light by default

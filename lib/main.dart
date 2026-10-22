@@ -79,16 +79,11 @@ class _HomeShellState extends State<HomeShell> {
           body: SafeArea(
             child: Row(
               children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(8, 8, 0, 8),
-                  child: Center(
-                    child: NeoNavBar(
-                      items: _items,
-                      selected: _index,
-                      onSelected: _select,
-                      vertical: true,
-                    ),
-                  ),
+                NeoNavBar(
+                  items: _items,
+                  selected: _index,
+                  onSelected: _select,
+                  vertical: true,
                 ),
                 Expanded(child: body),
               ],
@@ -104,10 +99,7 @@ class _HomeShellState extends State<HomeShell> {
         body: SafeArea(bottom: false, child: body),
         bottomNavigationBar: SafeArea(
           top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-            child: NeoNavBar(items: _items, selected: _index, onSelected: _select),
-          ),
+          child: NeoNavBar(items: _items, selected: _index, onSelected: _select),
         ),
       ),
     );

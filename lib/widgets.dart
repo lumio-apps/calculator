@@ -57,10 +57,18 @@ class NumberField extends StatelessWidget {
         suffixText: suffix,
         prefixText: prefix,
         filled: true,
-        fillColor: g.dark ? const Color(0xFF1C1F27) : const Color(0xFFDCE2EC),
+        fillColor: g.key,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: g.line),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: g.line),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: g.op, width: 2),
         ),
       ),
       onChanged: onChanged,

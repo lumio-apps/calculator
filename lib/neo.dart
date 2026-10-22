@@ -5,42 +5,34 @@ import 'package:flutter/services.dart';
 
 import 'settings.dart';
 
-/// Colors and shadows for the soft (neumorphic) look.
+/// Colors for the light, flat look: plain surfaces with a thin border, no blurred shadows.
 /// Read with [NeoStyle.of] inside build methods.
 class NeoStyle {
-  const NeoStyle._(this.dark, this.flat, this.accent);
+  const NeoStyle._(this.dark, this.accent);
 
   final bool dark;
-
-  /// True when the user turned on "Reduce effects": no soft shadows, flat outlined panels.
-  final bool flat;
   final Color accent;
 
   static NeoStyle of(BuildContext context) {
     final settings = SettingsScope.of(context);
-    return NeoStyle._(
-      Theme.of(context).brightness == Brightness.dark,
-      settings.reduceEffects,
-      settings.accent,
-    );
+    return NeoStyle._(Theme.of(context).brightness == Brightness.dark, settings.accent);
   }
 
-  Color get bg => dark ? const Color(0xFF22262F) : const Color(0xFFE4E9F1);
-  Color get text => dark ? const Color(0xFFE8ECF5) : const Color(0xFF2E3650);
-  Color get textDim => dark ? const Color(0xFFA5ADC4) : const Color(0xFF5A6280);
-  Color get danger => dark ? const Color(0xFFFF9A8B) : const Color(0xFFC0392B);
+  /// Page background.
+  Color get bg => dark ? const Color(0xFF14161C) : const Color(0xFFF4F6FA);
 
-  /// The shadow on the dark side of a raised shape.
-  Color get shadowDark => dark ? const Color(0xFF14161C) : const Color(0xFFB3BED0);
+  /// Keys, cards and panels.
+  Color get key => dark ? const Color(0xFF1E222B) : const Color(0xFFFFFFFF);
 
-  /// The highlight on the light side of a raised shape.
-  Color get shadowLight => dark ? const Color(0xFF2F3441) : const Color(0xFFFFFFFF);
+  /// Thin border around surfaces.
+  Color get line => dark ? const Color(0xFF2B303C) : const Color(0xFFE1E6EF);
 
-  /// Outline used when effects are reduced.
-  Color get outline => dark ? const Color(0x40FFFFFF) : const Color(0x4D7C8AA8);
+  /// Color of a surface while it is pressed.
+  Color get pressed => dark ? const Color(0xFF2A2F3A) : const Color(0xFFE8ECF4);
 
-  /// Surface color used when effects are reduced.
-  Color get flatFill => dark ? const Color(0xFF2A2E39) : const Color(0xFFF2F5FA);
+  Color get text => dark ? const Color(0xFFF1F3F8) : const Color(0xFF1E2433);
+  Color get textDim => dark ? const Color(0xFFA3ABBD) : const Color(0xFF5C6579);
+  Color get danger => dark ? const Color(0xFFFF8A80) : const Color(0xFFC62D2D);
 
   /// The accent color, made dark enough to read on the light surface.
   Color get op {
@@ -49,20 +41,15 @@ class NeoStyle {
     return hsl.withLightness(math.min(hsl.lightness, 0.3)).toColor();
   }
 
-  /// Gradient of the "=" key: the accent fading into a neighbouring hue.
-  List<Color> get equalsGradient {
-    final hsl = HSLColor.fromColor(accent);
-    return [accent, hsl.withHue((hsl.hue + 90) % 360).toColor()];
-  }
+  /// A soft tint of the accent, for icon backgrounds and the selected tab.
+  Color get soft => Color.alphaBlend(accent.withAlpha(dark ? 40 : 52), key);
 
-  /// Text color that stays readable on [equalsGradient].
-  Color get onEquals {
-    final mid = Color.lerp(equalsGradient[0], equalsGradient[1], 0.5)!;
-    return mid.computeLuminance() > 0.4 ? const Color(0xFF04130F) : Colors.white;
-  }
+  /// Fill of the "=" key.
+  Color get equalsFill => accent;
+
+  /// Text color that stays readable on [equalsFill].
+  Color get onEquals => accent.computeLuminance() > 0.4 ? const Color(0xFF04130F) : Colors.white;
 }
-
-bool _reduceMotion(BuildContext context) => MediaQuery.of(context).disableAnimations;
 
 /// The plain background shared by every screen.
 class NeoBackdrop extends StatelessWidget {
@@ -84,157 +71,12 @@ class NeoBackdrop extends StatelessWidget {
   }
 }
 
-/// Paints soft shadows on the inside of a rounded shape, so it looks pressed in.
-class _InsetPainter extends CustomPainter {
-  const _InsetPainter({
-    required this.radius,
-    required this.dark,
-    required this.light,
-    required this.offset,
-    required this.blur,
-  });
-
-  final double radius;
-  final Color dark;
-  final Color light;
-  final double offset;
-  final double blur;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final r = math.min(radius, math.min(size.width, size.height) / 2);
-    final shape = RRect.fromRectAndRadius(Offset.zero & size, Radius.circular(r));
-    final outer = Path()..addRect(Rect.fromLTWH(-80, -80, size.width + 160, size.height + 160));
-    final frame = Path.combine(PathOperation.difference, outer, Path()..addRRect(shape));
-    final mask = MaskFilter.blur(BlurStyle.normal, blur / 2);
-
-    canvas.save();
-    canvas.clipRRect(shape);
-    canvas.drawPath(
-      frame.shift(Offset(offset, offset)),
-      Paint()
-        ..color = dark
-        ..maskFilter = mask,
-    );
-    canvas.drawPath(
-      frame.shift(Offset(-offset, -offset)),
-      Paint()
-        ..color = light
-        ..maskFilter = mask,
-    );
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(_InsetPainter old) =>
-      old.radius != radius ||
-      old.dark != dark ||
-      old.light != light ||
-      old.offset != offset ||
-      old.blur != blur;
-}
-
-/// A soft surface. [press] goes from 0 (raised) to 1 (pressed in).
-class NeoSurface extends StatelessWidget {
-  const NeoSurface({
-    super.key,
-    required this.child,
-    this.radius = 28,
-    this.press = 0,
-    this.fill,
-    this.gradient,
-    this.glow,
-    this.glowStrength = 0,
-    this.small = false,
-  });
-
-  final Widget child;
-  final double radius;
-  final double press;
-  final Color? fill;
-  final List<Color>? gradient;
-  final Color? glow;
-  final double glowStrength;
-
-  /// Smaller shadows for small shapes such as icon buttons.
-  final bool small;
-
-  @override
-  Widget build(BuildContext context) {
-    final g = NeoStyle.of(context);
-    final r = BorderRadius.circular(radius);
-
-    if (g.flat) {
-      final base = fill ?? Color.lerp(g.flatFill, g.bg, press)!;
-      return DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: r,
-          color: gradient == null ? base : null,
-          gradient: gradient == null
-              ? null
-              : LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: gradient!),
-          border: Border.all(color: g.outline),
-        ),
-        child: child,
-      );
-    }
-
-    final dist = small ? 4.0 : 6.0;
-    final blur = small ? 10.0 : 14.0;
-    final clear = Colors.transparent;
-    final shadows = <BoxShadow>[
-      BoxShadow(
-        color: Color.lerp(g.shadowDark, clear, press)!,
-        offset: Offset(dist, dist),
-        blurRadius: blur,
-      ),
-      BoxShadow(
-        color: Color.lerp(g.shadowLight, clear, press)!,
-        offset: Offset(-dist, -dist),
-        blurRadius: blur,
-      ),
-      if (glow != null && glowStrength > 0)
-        BoxShadow(
-          color: glow!.withAlpha(math.max(0, math.min(255, (120 * glowStrength * (1 - press)).round()))),
-          blurRadius: 26,
-          spreadRadius: 2,
-        ),
-    ];
-
-    Widget inner = child;
-    if (press > 0) {
-      inner = CustomPaint(
-        painter: _InsetPainter(
-          radius: radius,
-          dark: Color.lerp(clear, g.shadowDark, press)!,
-          light: Color.lerp(clear, g.shadowLight, press)!,
-          offset: small ? 3.5 : 5,
-          blur: small ? 8 : 11,
-        ),
-        child: child,
-      );
-    }
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: r,
-        color: gradient == null ? (fill ?? g.bg) : null,
-        gradient: gradient == null
-            ? null
-            : LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: gradient!),
-        boxShadow: shadows,
-      ),
-      child: inner,
-    );
-  }
-}
-
-/// A resting panel: raised by default, or pressed in with [inset].
+/// A resting panel with a thin border. With [inset] it is filled with a soft tint instead.
 class NeoPanel extends StatelessWidget {
   const NeoPanel({
     super.key,
     required this.child,
-    this.radius = 28,
+    this.radius = 20,
     this.padding,
     this.margin,
     this.tint,
@@ -251,147 +93,106 @@ class NeoPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final g = NeoStyle.of(context);
-    final fill = tint == null ? null : Color.alphaBlend(tint!.withAlpha(g.dark ? 22 : 30), g.bg);
-    final box = RepaintBoundary(
-      child: NeoSurface(
-        radius: radius,
-        press: inset ? 1 : 0,
-        fill: fill,
-        child: Material(
-          type: MaterialType.transparency,
-          child: padding == null ? child : Padding(padding: padding!, child: child),
-        ),
+    final r = math.min(radius, 24.0);
+    final Color fill;
+    if (tint != null) {
+      fill = Color.alphaBlend(tint!.withAlpha(g.dark ? 28 : 36), g.key);
+    } else {
+      fill = inset ? g.soft : g.key;
+    }
+    final box = DecoratedBox(
+      decoration: BoxDecoration(
+        color: fill,
+        borderRadius: BorderRadius.circular(r),
+        border: inset ? null : Border.all(color: g.line),
+      ),
+      child: Material(
+        type: MaterialType.transparency,
+        child: padding == null ? child : Padding(padding: padding!, child: child),
       ),
     );
     return margin == null ? box : Padding(padding: margin!, child: box);
   }
 }
 
-/// Tap handling shared by keys, cards and icon buttons: sinks in while pressed.
-class _Pressable extends StatefulWidget {
-  const _Pressable({required this.onTap, required this.builder, this.scaleDown = 0.05});
+/// A tappable surface. Pressing it only changes its color.
+class _Tappable extends StatelessWidget {
+  const _Tappable({
+    required this.onTap,
+    required this.child,
+    required this.radius,
+    this.fill,
+    this.pressedFill,
+  });
 
   final VoidCallback? onTap;
-  final Widget Function(BuildContext context, double press) builder;
-  final double scaleDown;
-
-  @override
-  State<_Pressable> createState() => _PressableState();
-}
-
-class _PressableState extends State<_Pressable> {
-  bool _down = false;
-
-  void _release() {
-    // Keep the pressed look visible for a moment, even on very quick taps.
-    Future<void>.delayed(const Duration(milliseconds: 90), () {
-      if (mounted) setState(() => _down = false);
-    });
-  }
+  final Widget child;
+  final double radius;
+  final Color? fill;
+  final Color? pressedFill;
 
   @override
   Widget build(BuildContext context) {
-    final reduce = _reduceMotion(context);
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTapDown: widget.onTap == null ? null : (_) => setState(() => _down = true),
-      onTapUp: widget.onTap == null ? null : (_) => _release(),
-      onTapCancel: widget.onTap == null ? null : _release,
-      onTap: widget.onTap,
-      child: TweenAnimationBuilder<double>(
-        tween: Tween<double>(end: _down ? 1 : 0),
-        duration: Duration(milliseconds: reduce ? 0 : 160),
-        curve: Curves.easeOut,
-        builder: (context, t, _) => Transform.scale(
-          scale: 1 - widget.scaleDown * t,
-          child: widget.builder(context, t),
-        ),
+    final g = NeoStyle.of(context);
+    final shape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(radius),
+      side: BorderSide(color: fill == null ? g.line : Colors.transparent),
+    );
+    return Material(
+      color: fill ?? g.key,
+      shape: shape,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        splashFactory: NoSplash.splashFactory,
+        splashColor: Colors.transparent,
+        hoverColor: Colors.transparent,
+        highlightColor: pressedFill ?? g.pressed,
+        child: child,
       ),
     );
   }
 }
 
-/// A round (or pill shaped) key. It sinks in when pressed. The "=" key can breathe with a glow.
-class NeoKey extends StatefulWidget {
+/// A rounded key. [fill] gives it a solid color (used by the "=" key).
+class NeoKey extends StatelessWidget {
   const NeoKey({
     super.key,
     required this.onTap,
     required this.child,
-    this.gradient,
-    this.glow,
-    this.tint,
+    this.fill,
     this.semanticsLabel,
   });
 
   final VoidCallback onTap;
   final Widget child;
-  final List<Color>? gradient;
-  final Color? glow;
-  final Color? tint;
+  final Color? fill;
   final String? semanticsLabel;
 
   @override
-  State<NeoKey> createState() => _NeoKeyState();
-}
-
-class _NeoKeyState extends State<NeoKey> with SingleTickerProviderStateMixin {
-  late final AnimationController _breath = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 1600),
-  );
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.glow != null) _breath.repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _breath.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final g = NeoStyle.of(context);
-    final reduce = _reduceMotion(context);
-    final fill = widget.tint == null ? null : Color.alphaBlend(widget.tint!.withAlpha(g.dark ? 26 : 34), g.bg);
-
     return Semantics(
       button: true,
-      label: widget.semanticsLabel,
-      excludeSemantics: widget.semanticsLabel != null,
-      child: RepaintBoundary(
-        child: _Pressable(
-          onTap: widget.onTap,
-          builder: (context, press) {
-            return AnimatedBuilder(
-              animation: _breath,
-              builder: (context, _) => NeoSurface(
-                radius: 999,
-                press: press,
-                fill: fill,
-                gradient: widget.gradient,
-                glow: widget.glow,
-                glowStrength: g.flat ? 0 : (reduce ? 0.4 : _breath.value),
-                child: Center(child: widget.child),
-              ),
-            );
-          },
-        ),
+      label: semanticsLabel,
+      excludeSemantics: semanticsLabel != null,
+      child: _Tappable(
+        onTap: onTap,
+        radius: 20,
+        fill: fill,
+        pressedFill: fill == null ? null : Color.lerp(fill, Colors.black, 0.12),
+        child: Center(child: child),
       ),
     );
   }
 }
 
-/// A raised card that sinks in when pressed (used for the list of tools).
+/// A card for the list of tools.
 class NeoCard extends StatelessWidget {
   const NeoCard({
     super.key,
     required this.onTap,
     required this.child,
-    this.radius = 26,
+    this.radius = 18,
     this.margin,
   });
 
@@ -402,22 +203,12 @@ class NeoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final card = RepaintBoundary(
-      child: _Pressable(
-        onTap: onTap,
-        scaleDown: 0.025,
-        builder: (context, press) => NeoSurface(
-          radius: radius,
-          press: press,
-          child: Material(type: MaterialType.transparency, child: child),
-        ),
-      ),
-    );
+    final card = _Tappable(onTap: onTap, radius: radius, child: child);
     return margin == null ? card : Padding(padding: margin!, child: card);
   }
 }
 
-/// A small round raised button for headers.
+/// A small rounded button for headers.
 class NeoIconButton extends StatelessWidget {
   const NeoIconButton({super.key, required this.icon, required this.onPressed, this.tooltip});
 
@@ -432,18 +223,13 @@ class NeoIconButton extends StatelessWidget {
       button: true,
       label: tooltip,
       excludeSemantics: tooltip != null,
-      child: _Pressable(
+      child: _Tappable(
         onTap: onPressed,
-        scaleDown: 0.06,
-        builder: (context, press) => NeoSurface(
-          radius: 22,
-          small: true,
-          press: press,
-          child: SizedBox(
-            width: 44,
-            height: 44,
-            child: Icon(icon, size: 22, color: g.textDim),
-          ),
+        radius: 14,
+        child: SizedBox(
+          width: 44,
+          height: 44,
+          child: Icon(icon, size: 22, color: g.textDim),
         ),
       ),
     );
@@ -451,7 +237,7 @@ class NeoIconButton extends StatelessWidget {
   }
 }
 
-/// The same round look as [NeoIconButton], for places that handle the tap themselves (such as a popup menu).
+/// The same look as [NeoIconButton], for places that handle the tap themselves (such as a popup menu).
 class NeoCircleIcon extends StatelessWidget {
   const NeoCircleIcon(this.icon, {super.key});
 
@@ -462,9 +248,12 @@ class NeoCircleIcon extends StatelessWidget {
     final g = NeoStyle.of(context);
     return Padding(
       padding: const EdgeInsets.all(4),
-      child: NeoSurface(
-        radius: 22,
-        small: true,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: g.key,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: g.line),
+        ),
         child: SizedBox(
           width: 44,
           height: 44,
@@ -483,7 +272,7 @@ class NeoNavItem {
   final String label;
 }
 
-/// Floating navigation bar: a pressed-in track with a raised pill that slides to the chosen tab.
+/// Navigation bar with a thin border. The chosen tab just changes color.
 class NeoNavBar extends StatelessWidget {
   const NeoNavBar({
     super.key,
@@ -498,11 +287,10 @@ class NeoNavBar extends StatelessWidget {
   final ValueChanged<int> onSelected;
   final bool vertical;
 
-  Widget _tile(NeoStyle g, bool reduce, int i, double w, double h) {
+  Widget _tile(NeoStyle g, int i) {
     final item = items[i];
     final isSelected = i == selected;
     final color = isSelected ? g.op : g.textDim;
-    final fast = Duration(milliseconds: reduce ? 0 : 280);
     return Semantics(
       selected: isSelected,
       button: true,
@@ -512,30 +300,30 @@ class NeoNavBar extends StatelessWidget {
         behavior: HitTestBehavior.opaque,
         onTap: () => onSelected(i),
         child: SizedBox(
-          width: w,
-          height: h,
+          height: 56,
+          width: vertical ? 76 : null,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              AnimatedScale(
-                scale: isSelected ? 1.12 : 1,
-                duration: fast,
-                curve: Curves.easeOutBack,
-                child: TweenAnimationBuilder<Color?>(
-                  tween: ColorTween(end: color),
-                  duration: fast,
-                  builder: (context, c, _) => Icon(isSelected ? item.selectedIcon : item.icon, size: 22, color: c),
+              Container(
+                width: 52,
+                height: 28,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: isSelected ? g.soft : Colors.transparent,
+                  borderRadius: BorderRadius.circular(14),
                 ),
+                child: Icon(isSelected ? item.selectedIcon : item.icon, size: 22, color: color),
               ),
               const SizedBox(height: 2),
-              AnimatedDefaultTextStyle(
-                duration: fast,
+              Text(
+                item.label,
+                maxLines: 1,
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                   color: color,
                 ),
-                child: Text(item.label, maxLines: 1),
               ),
             ],
           ),
@@ -547,38 +335,19 @@ class NeoNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final g = NeoStyle.of(context);
-    final reduce = _reduceMotion(context);
-    final n = items.length;
-    final tileH = vertical ? 60.0 : 52.0;
-
-    return NeoPanel(
-      inset: true,
-      radius: 28,
-      padding: const EdgeInsets.all(6),
-      child: LayoutBuilder(
-        builder: (context, box) {
-          final tileW = vertical ? 72.0 : box.maxWidth / n;
-          final pill = AnimatedPositioned(
-            duration: Duration(milliseconds: reduce ? 0 : 420),
-            curve: const Cubic(0.25, 1.1, 0.35, 1.0),
-            left: vertical ? 0 : selected * tileW,
-            top: vertical ? selected * tileH : 0,
-            width: tileW,
-            height: tileH,
-            child: const NeoSurface(radius: 22, small: true, child: SizedBox.expand()),
-          );
-          final tiles = [for (var i = 0; i < n; i++) _tile(g, reduce, i, tileW, tileH)];
-          return SizedBox(
-            width: vertical ? tileW : box.maxWidth,
-            height: vertical ? tileH * n : tileH,
-            child: Stack(
-              children: [
-                pill,
-                vertical ? Column(children: tiles) : Row(children: tiles),
-              ],
-            ),
-          );
-        },
+    final tiles = [
+      for (var i = 0; i < items.length; i++) vertical ? _tile(g, i) : Expanded(child: _tile(g, i)),
+    ];
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: g.bg,
+        border: vertical
+            ? Border(right: BorderSide(color: g.line))
+            : Border(top: BorderSide(color: g.line)),
+      ),
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(4, vertical ? 8 : 6, 4, vertical ? 8 : 6),
+        child: vertical ? Column(mainAxisSize: MainAxisSize.min, children: tiles) : Row(children: tiles),
       ),
     );
   }

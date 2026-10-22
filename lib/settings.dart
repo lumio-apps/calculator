@@ -43,7 +43,6 @@ class AppSettings extends ChangeNotifier {
     _themeMode = ThemeMode.values[(_prefs.getInt('themeMode') ?? 0).clamp(0, ThemeMode.values.length - 1)];
     _accentIndex = (_prefs.getInt('accent') ?? 0).clamp(0, accentColors.length - 1);
     _vibration = _prefs.getBool('vibration') ?? true;
-    _reduceEffects = _prefs.getBool('reduceEffects') ?? false;
     _decimalPlaces = (_prefs.getInt('decimals') ?? 10).clamp(0, 10);
     _numberStyle = NumberStyle.values[(_prefs.getInt('numberStyle') ?? 1).clamp(0, NumberStyle.values.length - 1)];
     _history = _prefs.getStringList('history') ?? <String>[];
@@ -57,7 +56,6 @@ class AppSettings extends ChangeNotifier {
   late ThemeMode _themeMode;
   late int _accentIndex;
   late bool _vibration;
-  late bool _reduceEffects;
   late int _decimalPlaces;
   late NumberStyle _numberStyle;
   late List<String> _history;
@@ -67,7 +65,6 @@ class AppSettings extends ChangeNotifier {
   int get accentIndex => _accentIndex;
   Color get accent => accentColors[_accentIndex];
   bool get vibration => _vibration;
-  bool get reduceEffects => _reduceEffects;
   int get decimalPlaces => _decimalPlaces;
   NumberStyle get numberStyle => _numberStyle;
   List<String> get history => List.unmodifiable(_history);
@@ -88,12 +85,6 @@ class AppSettings extends ChangeNotifier {
   set vibration(bool v) {
     _vibration = v;
     _prefs.setBool('vibration', v);
-    notifyListeners();
-  }
-
-  set reduceEffects(bool v) {
-    _reduceEffects = v;
-    _prefs.setBool('reduceEffects', v);
     notifyListeners();
   }
 
